@@ -33,58 +33,33 @@ int main(int argc, char *argv[])
   parse_parameters_file (parameters, options["parameters"].as<std::string>());
 
 
-  std::unique_ptr<DimensionlessModel> model;
+  Model<dim> model {parameters};
 
-  switch (dim)
-  {
-    case 1:
-    {
-      const unsigned int dim {1};
-      break;
-    }
+  model.fe = std::make_unique <dealii::FE_Q<dim>> (
+                 parameters.get_integer("Finite element order"));
 
-    case 2:
-    {
-      const unsigned int dim {2};
-      model = std::make_unique<Model<dim>> (parameters);
-      model->set_fe( std::make_unique <dealii::FE_Q<dim>>(
-                         parameters.get_integer("Finite element order")) );
-      break;
-    }
+  model.use_default_mesh(QUANTUM_WELL);
+  // model.use_default_mesh(SHELL);
 
-    case 3:
-    {
-      break;
-    }
-  }
 
-  // Model<dim> model {parameters};
-  //
-  // model.fe = std::make_unique <dealii::FE_Q<dim>> (
-  //                parameters.get_integer("Finite element order"));
-  //
-  // model.use_default_mesh(QUANTUM_WELL);
-  // // model.use_default_mesh(SHELL);
-  //
-  //
-  // model.results_path = fs::current_path() /
-  //                        (model.name + "_" + std::to_string(dim) + "D_result");
-  // fs::create_directory(model.results_path);
-  //
-  // model.set_problem_type(GROUND_STATE);
-  // // model.set_problem_type(TIME_DEPENDENT);
-  //
-  // // model.problem = std::make_unique<EigenvalueProblem<dim>>(model);
-  // model.problem->run();
-  //
-  // // {
-  // //   EigenvalueProblem<dim> ground_state(model);
-  // //   ground_state.run();
-  // // }
-  //
-  // // cout << model.ground_states.size() << endl;
-  //
-  // // model.save_to_file();
+  model.results_path = fs::current_path() /
+                         (model.name + "_" + std::to_string(dim) + "D_result");
+  fs::create_directory(model.results_path);
+
+  model.set_problem_type(GROUND_STATE);
+  // model.set_problem_type(TIME_DEPENDENT);
+
+  // model.problem = std::make_unique<EigenvalueProblem<dim>>(model);
+  model.problem->run();
+
+  // {
+  //   EigenvalueProblem<dim> ground_state(model);
+  //   ground_state.run();
+  // }
+
+  // cout << model.ground_states.size() << endl;
+
+  // model.save_to_file();
 
   cout << endl << "Job done." << endl;
 

@@ -76,18 +76,6 @@ void Model<dim>::save_mesh() const
   grid_out.write_vtk(mesh, file);
 }
 
-// Getters and Setters ///////////////////////////////////////////////////////
-template <int dim>
-void Model<dim>::set_fe (std::unique_ptr<FiniteElement<dim>> fe_to_set)
-{
-  fe = std::move(fe_to_set);
-  cout << fe->get_name() << endl;
-}
-
-template <int dim>
-void Model<dim>::get_fe() {}
-// //////1/////////2/////////3/////////4/////////5/////////6/////////7////////
-
 // Explicit template instantiation
 template class Model<1>;
 template class Model<2>;
