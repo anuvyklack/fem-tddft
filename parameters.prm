@@ -1,0 +1,17 @@
+# Listing of Parameters
+# ---------------------
+# Use built-in mesh type.
+# set Use built-in mesh type =
+
+# The polynomial degree
+set Finite element order = 2
+
+# The number of times the 1-cell coarse mesh should be refined globally for
+# our computations. 5
+set Global mesh refinement steps = 5
+
+# The number of eigenvalues/eigenfunctions to be computed.
+set Number of eigenvalues/eigenfunctions = 3
+
+# A functional description of the potential.
+set Potential = 0
