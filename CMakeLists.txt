@@ -56,6 +56,7 @@ set(SOURCE_FILES "src/main.cpp"
                  "src/general.cpp"
                  "src/model.cpp"
                  "src/ground_state.cpp"
+                 "src/time_dependent.cpp"
    )
 add_executable(${TARGET} ${SOURCE_FILES})
 target_link_libraries(${TARGET} ${Boost_LIBRARIES})

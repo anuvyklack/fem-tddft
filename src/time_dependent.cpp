@@ -2,9 +2,6 @@
 #include <fstream>
 #include <filesystem>
 
-// #include <boost/archive/text_iarchive.hpp>
-// #include <boost/archive/text_oarchive.hpp>
-
 #include <deal.II/base/logstream.h>
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/function.h>
@@ -54,49 +51,23 @@ class Potential : public Function<dim>
   };
 };
 
-
-int main()
-{
-  const unsigned int dim = 1;
-  const std::string prm_file = "eigenvalues.prm";
-
-  TDSE<dim> cluster {prm_file};
-  cluster.run();
-
-  cout << endl << "   Job done." << endl;
-
-  return 0;
-}
-
-
 template <int dim>
-TDSE<dim>::TDSE(const std::string &prm_file)
-  : fe(1), end_time(0.001)
+TDSE<dim>::TDSE(Model<dim> & model)
+  : model(model),
+    parameters(model.parameters),
+    mesh(model.mesh),
+    fe(model.get_fe()),
+    dof_handler(model.dof_handler),
+    initial_states(model.ground_states),
+    end_time(0.001)
 {
-  fs::create_directory(fs::current_path() / results_folder);
-
-  parameters.declare_entry("Global mesh refinement steps",
-                           "5",
-                           Patterns::Integer(0, 20),
-                           "The number of times the 1-cell coarse mesh should "
-                           "be refined globally for our computations.");
-  parameters.declare_entry("Number of eigenvalues/eigenfunctions",
-                           "5",
-                           Patterns::Integer(0, 100),
-                           "The number of eigenvalues/eigenfunctions "
-                           "to be computed.");
-  parameters.declare_entry("Potential",
-                           "0",
-                           Patterns::Anything(),
-                           "A functional description of the potential.");
-  parameters.parse_input(prm_file);
+  results_path = model.results_path / "time_dependent_solution",
+  fs::create_directory(results_path);
 }
-
 
 template <int dim>
 void TDSE<dim>::run()
 {
-  restore_data();
   setup_system();
   assemble_matrices();
 
@@ -118,26 +89,6 @@ void TDSE<dim>::run()
   }
 }
 
-
-template <int dim>
-void TDSE<dim>::restore_data()
-{
-  fs::path file_path = fs::current_path() / results_folder / "data_for_restore";
-  std::ifstream file(file_path);
-  boost::archive::binary_iarchive archive(file);
-
-  archive >> mesh;
-
-  unsigned int fe_degree;
-  archive >> fe_degree;
-  // fe = new FE_Q<dim>{fe_degree};
-
-  dof_handler.distribute_dofs(fe);
-
-  archive >> dof_handler >> initial_states;
-}
-
-
 template <int dim>
 void TDSE<dim>::setup_system()
 {
@@ -154,7 +105,6 @@ void TDSE<dim>::setup_system()
   constraints.close();
 }
 
-
 template <int dim>
 void TDSE<dim>::assemble_matrices()
 {
@@ -167,10 +117,8 @@ void TDSE<dim>::assemble_matrices()
   const unsigned int dofs_per_cell = fe.dofs_per_cell;
   const unsigned int n_q_points = quadrature_formula.size();
 
-  FullMatrix<complex<double>> cell_matrix_lhs(dofs_per_cell,
-                                              dofs_per_cell);
-  FullMatrix<complex<double>> cell_matrix_rhs(dofs_per_cell,
-                                              dofs_per_cell);
+  FullMatrix<complex<double>> cell_matrix_lhs {dofs_per_cell, dofs_per_cell};
+  FullMatrix<complex<double>> cell_matrix_rhs {dofs_per_cell, dofs_per_cell};
 
   std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
 
@@ -194,38 +142,40 @@ void TDSE<dim>::assemble_matrices()
           const std::complex<double> i {0, 1};
 
           cell_matrix_lhs(k, l) +=
-            (
-              fe_values.shape_value(k, q_index) *   // phi_k
-              fe_values.shape_value(l, q_index)     // phi_l
-              +
-              i * time_step *                       // i*dt
               (
-                fe_values.shape_grad(k, q_index) *  // grad phi_k
-                fe_values.shape_grad(l, q_index)    // grad phi_l
+                fe_values.shape_value(k, q_index) *   // phi_k
+                fe_values.shape_value(l, q_index)     // phi_l
                 +
-                potential_values[q_index] *         // V(r)
-                fe_values.shape_value(k, q_index) * // phi_k
-                fe_values.shape_value(l, q_index)   // phi_l
-              )
-            ) *
-            fe_values.JxW(q_index);                 // J*dx
+                i * time_step *                       // i*dt
+                (
+                  1./2 *                              // 1/2
+                  fe_values.shape_grad(k, q_index) *  // grad phi_k
+                  fe_values.shape_grad(l, q_index)    // grad phi_l
+                  +
+                  potential_values[q_index] *         // V(r)
+                  fe_values.shape_value(k, q_index) * // phi_k
+                  fe_values.shape_value(l, q_index)   // phi_l
+                )
+              ) * fe_values.JxW(q_index);             // J*dr
+
 
           cell_matrix_rhs(k, l) +=
-            (-i *
-             fe_values.shape_value(k, q_index) *
-             fe_values.shape_value(l, q_index)
-             -
-             i * time_step *
-             (
-               fe_values.shape_grad(k, q_index) *
-               fe_values.shape_grad(l, q_index)
-               +
-               potential_values[q_index] *
-               fe_values.shape_value(k, q_index) *
-               fe_values.shape_value(l, q_index)
-             )
-            ) *
-            fe_values.JxW(q_index);
+              (
+                fe_values.shape_value(k, q_index) *   // phi_k
+                fe_values.shape_value(l, q_index)     // phi_l
+                -
+                i * time_step *                       // i*dt
+                (
+                  1./2 *                              // 1/2
+                  fe_values.shape_grad(k, q_index) *  // grad phi_k
+                  fe_values.shape_grad(l, q_index)    // grad phi_l
+                  +
+                  potential_values[q_index] *         // V(r)
+                  fe_values.shape_value(k, q_index) * // phi_k
+                  fe_values.shape_value(l, q_index)   // phi_l
+                )
+              ) * fe_values.JxW(q_index);             // J*dr
+
         }
       }
     } // end loop over quarature points
@@ -240,11 +190,10 @@ void TDSE<dim>::assemble_matrices()
   } // end loop over active cells
 }
 
-
 template <int dim>
 void TDSE<dim>::do_time_step()
 {
-  //                   OutVector,  InVector
+                    // OutVector,  InVector
   matrix_current.vmult(system_rhs, solution);
 
   // SparseDirectUMFPACK takes the matrix and the right hand side vector and
@@ -254,8 +203,6 @@ void TDSE<dim>::do_time_step()
 
   solution = system_rhs;
 }
-
-
 
 template <int dim>
 void TDSE<dim>::save_potential() const
@@ -268,11 +215,10 @@ void TDSE<dim>::save_potential() const
   data_out.add_data_vector(projected_potential, "interpolated_potential");
   data_out.build_patches();
 
-  fs::path file_path = fs::current_path() / results_folder / "potential.vtk";
+  fs::path file_path = fs::current_path() / results_path / "potential.vtk";
   std::ofstream output(file_path);
   data_out.write_vtk(output);
 }
-
 
 namespace DataPostprocessors
 {
@@ -284,7 +230,7 @@ namespace DataPostprocessors
         : DataPostprocessorScalar<dim>("Density", update_values)
     {};
 
-    virtual void evaluate_vector_field(
+    virtual void evaluate_vector_field (
         const DataPostprocessorInputs::Vector<dim> &inputs,
         std::vector<Vector<double>> &computed_quantities
     ) const override
@@ -309,8 +255,6 @@ namespace DataPostprocessors
 template <int dim>
 void TDSE<dim>::output_results() const
 {
-  const std::string results_folder = "results";
-
   const DataPostprocessors::ProbabilityDensity<dim> density;
   DataOut<dim> data_out;
   data_out.attach_dof_handler(dof_handler);
@@ -318,12 +262,19 @@ void TDSE<dim>::output_results() const
   data_out.add_data_vector(solution, density);
   data_out.build_patches();
   data_out.set_flags(DataOutBase::VtkFlags(time, timestep_number));
+
   const std::string filename =
-    "td-solution-" + Utilities::int_to_string(timestep_number, 3) + ".vtu";
-  fs::path file_path = fs::current_path() / results_folder / filename;
+      "td_solution_" + Utilities::int_to_string(timestep_number, 3) + ".vtu";
+  fs::path file_path =
+      fs::current_path() / results_path / filename;
   std::ofstream output(file_path);
+
   data_out.write_vtu(output);
 }
 
+// Explicit template instantiation
+template class TDSE<1>;
+template class TDSE<2>;
+template class TDSE<3>;
 
 // vim: ts=2 sts=2 sw=2

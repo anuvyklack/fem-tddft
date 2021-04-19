@@ -15,27 +15,20 @@ using std::cin, std::cout, std::endl;
 namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
-// // Explicit template instantiation
-// extern template class Model<1>;
-// extern template class Model<2>;
-// extern template class Model<3>;
-
-
 int main(int argc, char *argv[])
 {
   // const unsigned int dim {2};
 
-  // Check if this app is runnint in parellel with "mpirun".
-  // Exit with error if true.
-  exit_if_mpi(argc, argv);
+  // Check if this app is runnint in parellel with "mpirun". Exit with error if true.
+  dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
+  exit_if_mpi(argv);
 
   // Parse command-line options.
   po::variables_map options = parse_cmdline_options (argc, argv);
-
   // Parse parameters file
   dealii::ParameterHandler parameters;
-  parse_parameters_file (parameters,
-                         options["parameters"].as<std::string>());
+  parse_parameters_file (parameters, options["parameters"].as<std::string>());
+
 
 
   cout << endl << "Job done." << endl;

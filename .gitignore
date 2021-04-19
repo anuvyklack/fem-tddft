@@ -3,3 +3,5 @@ build*
 CMakeLists.txt.user
 tags
 *.o
+*.not
+*.autosave

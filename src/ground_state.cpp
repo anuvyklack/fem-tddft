@@ -41,10 +41,10 @@ namespace fs = std::filesystem;
 template <int dim>
 EigenvalueProblem<dim>::EigenvalueProblem (Model<dim> &model)
   : model(model),
+    parameters(model.parameters),
     mesh(model.mesh),
-    fe(*model.fe),
-    dof_handler(model.dof_handler),
-    parameters(model.parameters)
+    fe(model.get_fe()),
+    dof_handler(model.dof_handler)
 {}
 
 template <int dim>
@@ -52,7 +52,7 @@ void EigenvalueProblem<dim>::setup_system() //{{{
 {
   cout << "Global mesh refinement steps: "
        << parameters.get_integer("Global mesh refinement steps") << endl;
-  mesh.refine_global( parameters.get_integer("Global mesh refinement steps"));
+  mesh.refine_global( parameters.get_integer("Global mesh refinement steps") );
   dof_handler.distribute_dofs(fe);
 
   DoFTools::make_zero_boundary_constraints(dof_handler, constraints);
@@ -75,9 +75,8 @@ void EigenvalueProblem<dim>::setup_system() //{{{
 
 } //}}}
 
-
 template <int dim>
-void EigenvalueProblem<dim>::assemble_system()  //{{{
+void EigenvalueProblem<dim>::assemble_system() //{{{
 {
   QGauss<dim> quadrature_formula(fe.degree + 1);
 
@@ -112,21 +111,24 @@ void EigenvalueProblem<dim>::assemble_system()  //{{{
         for (unsigned int i = 0; i < dofs_per_cell; ++i)
           for (unsigned int j = 0; j < dofs_per_cell; ++j)
           {
-            cell_stiffness_matrix(i, j) +=           //
-              (fe_values.shape_grad(i, q_point) *    //
-               fe_values.shape_grad(j, q_point)      //
-               +                                     //
-               potential_values[q_point] *           //
-               fe_values.shape_value(i, q_point) *   //
-               fe_values.shape_value(j, q_point)     //
-              ) *                                    //
-              fe_values.JxW(q_point);                //
+            cell_stiffness_matrix(i, j) +=
+                (
+                  1. / 2 *                            // 1/2
+                  fe_values.shape_grad(i, q_point) *  // grad phi_i
+                  fe_values.shape_grad(j, q_point)    // grad phi_j
+                  +
+                  potential_values[q_point] *         // V(r)
+                  fe_values.shape_value(i, q_point) * // phi_i
+                  fe_values.shape_value(j, q_point)   // phi_j
+                )
+                * fe_values.JxW(q_point);             // J*dr
 
-            cell_mass_matrix(i, j) +=              //
-              (fe_values.shape_value(i, q_point) * //
-               fe_values.shape_value(j, q_point)   //
-               ) *                                 //
-              fe_values.JxW(q_point);              //
+            cell_mass_matrix(i, j) +=
+                (
+                  fe_values.shape_value(i, q_point) * // grad(phi_i)
+                  fe_values.shape_value(j, q_point)   // grad(phi_j)
+                )
+                * fe_values.JxW(q_point);             // J*dr
           }
 
       // Now that we have the local matrix contributions, we transfer them
@@ -162,11 +164,10 @@ void EigenvalueProblem<dim>::assemble_system()  //{{{
   std::cout << "   Spurious eigenvalues are all in the interval "
             << "[" << min_spurious_eigenvalue << ","
             << max_spurious_eigenvalue << "]" << std::endl;
-}  //}}}
-
+} //}}}
 
 template <int dim>
-unsigned int EigenvalueProblem<dim>::solve()  //{{{
+unsigned int EigenvalueProblem<dim>::solve() //{{{
 {
   // Assigning convergence control
   SolverControl                    solver_control(dof_handler.n_dofs(), 1e-9);
@@ -187,11 +188,10 @@ unsigned int EigenvalueProblem<dim>::solve()  //{{{
 
   // Return the number of iterations it took to converge
   return solver_control.last_step();
-}  //}}}
-
+} //}}}
 
 template <int dim>
-void EigenvalueProblem<dim>::output_results() const  //{{{
+void EigenvalueProblem<dim>::output_results() const //{{{
 {
   // Save eigenfunctions and interpolated potential.
   DataOut<dim> data_out;
@@ -200,7 +200,8 @@ void EigenvalueProblem<dim>::output_results() const  //{{{
 
   for (unsigned int i = 0; i < eigenfunctions.size(); ++i)
     data_out.add_data_vector(eigenfunctions[i],
-                             std::string("eigenfunction_") + Utilities::int_to_string(i));
+                             std::string("eigenfunction_") +
+                                 Utilities::int_to_string(i));
 
   Vector<double> projected_potential(dof_handler.n_dofs());
   {
@@ -214,14 +215,14 @@ void EigenvalueProblem<dim>::output_results() const  //{{{
 
   data_out.build_patches();
 
+  // Write to file
   fs::path file_path = model.results_path / "eigenvectors.vtu";
   std::ofstream output(file_path);
   data_out.write_vtu(output);
-}  //}}}
-
+} //}}}
 
 template <int dim>
-void EigenvalueProblem<dim>::run()  //{{{
+void EigenvalueProblem<dim>::run() //{{{
 {
   setup_system();
 
@@ -253,9 +254,9 @@ void EigenvalueProblem<dim>::run()  //{{{
   cout << endl;
   for (unsigned int i = 0; i < eigenvalues.size(); ++i)
     cout << "      Eigenvalue " << i << " : " << eigenvalues[i] << endl;
+  cout << endl;
 
-}  //}}}
-
+} //}}}
 
 // template <int dim>
 // void EigenvalueProblem<dim>::test()

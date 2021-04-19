@@ -1,6 +1,8 @@
 #ifndef MODEL_HPP
 #define MODEL_HPP
 
+// #include "ground_state.hpp"
+
 #include <deal.II/grid/tria.h>
 #include <deal.II/fe/fe.h>
 #include <deal.II/dofs/dof_handler.h>
@@ -20,11 +22,12 @@ enum MeshType {
 };
 
 class BaseProblem; // forward declaration
+// template<int dim> class EigenvalueProblem;
+// template<int dim> class TDSE;
 
 
 template <int dim>
 class Model
-// class Model
 {
 public:
   Model (dealii::ParameterHandler &parameters);
@@ -32,8 +35,9 @@ public:
   void use_default_mesh(MeshType type);
 
   void save_to_file ( std::string file_name = "data_for_restore" ) const;
-  void load_from_file();
+  void load_from_file ( std::string file_name = "data_for_restore" );
   void save_mesh() const;
+  void output_ground_states() const;
 
   dealii::ParameterHandler &parameters;
 
@@ -41,14 +45,24 @@ public:
   std::filesystem::path results_path;
 
   dealii::Triangulation<dim> mesh;
-  std::unique_ptr <dealii::FiniteElement<dim>> fe;
+  // std::unique_ptr <dealii::FiniteElement<dim>> fe;
   dealii::DoFHandler<dim> dof_handler {mesh};
 
   std::vector<dealii::Vector<double>> ground_states;
 
-// private:
   std::unique_ptr <BaseProblem> problem;
-  // BaseProblem *problem;
+
+  // Getters and Setters //////////////////////////////////////////////////////
+  const dealii::FiniteElement<dim>& get_fe() const { return *fe; }
+  // ////1/////////2/////////3/////////4/////////5/////////6/////////7/////////
+
+  // friend class EigenvalueProblem<dim>;
+  // friend class TDSE<dim>;
+
+private:
+  void set_fe (const unsigned int &order);
+
+  std::unique_ptr <dealii::FiniteElement<dim>> fe;
 };
 
 
@@ -59,3 +73,4 @@ public:
 };
 
 #endif
+// vim: ts=2 sts=2 sw=2

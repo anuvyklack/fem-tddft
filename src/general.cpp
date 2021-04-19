@@ -12,33 +12,29 @@ namespace po = boost::program_options;
 
 // Check if this app is runnint in parellel with "mpirun".
 // Exit with error if true.
-void exit_if_mpi (int argc, char *argv[])  //{{{
+void exit_if_mpi (char** &argv) // name_of_executable
 {
-  (void)argc;
   if (dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) != 1)
   {
     if (dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
-      fs::path name_of_executable = argv[0];
-      name_of_executable = name_of_executable.filename();
       std::cerr << "This program can only be run in serial, use "
-                << "./" << name_of_executable.c_str() << endl;
+                << argv[0] << endl;
     }
     std::exit(1);
   }
-}  //}}}
-
+}
 
 // Parse command-line options.
-po::variables_map parse_cmdline_options (int argc, char *argv[])  //{{{
+po::variables_map parse_cmdline_options (int &argc, char **&argv)
 {
-  const unsigned int dim {2};
+  const unsigned int default_dim {2};
   const auto prm_file_name = "parameters.prm";
 
   // Allowd input options.
   po::options_description possible_options{"Options"};
   possible_options.add_options()
-    ("dim,d", po::value<unsigned int>()->default_value(dim),
+    ("dim,d", po::value<unsigned int>()->default_value(default_dim),
               "The dimension of the space.")
     ("parameters,p", po::value<std::string>()->default_value(prm_file_name),
                      "File with input parameters.");
@@ -88,11 +84,10 @@ po::variables_map parse_cmdline_options (int argc, char *argv[])  //{{{
   cout << endl;
 
   return options;
-}  //}}}
-
+}
 
 // Parse parameters file
-void parse_parameters_file (dealii::ParameterHandler &parameters,  //{{{
+void parse_parameters_file (dealii::ParameterHandler &parameters,
                             std::string prm_file_name)
 {
   parameters.declare_entry(
@@ -117,7 +112,7 @@ void parse_parameters_file (dealii::ParameterHandler &parameters,  //{{{
       dealii::Patterns::Anything(),
       "A functional description of the potential.");
   parameters.parse_input( prm_file_name );
-}  //}}}
+}
 
 
 // vim: ts=2 sts=2 sw=2 fdm=marker
