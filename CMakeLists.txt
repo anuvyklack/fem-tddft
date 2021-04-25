@@ -1,5 +1,5 @@
 # PROJECT(schrodinger VERSION 0.0.3)
-PROJECT(schrodinger)
+PROJECT(fem-tddft)
 
 SET(TARGET schr)
 
@@ -55,7 +55,8 @@ set(Boost_USE_STATIC_LIBS ON)
 set(SOURCE_FILES "src/main.cpp"
                  "src/general.cpp"
                  "src/model.cpp"
-                 "src/ground_state.cpp"
+                 "src/stationary_schrodinger.cpp"
+                 "src/hartree.cpp"
                  "src/time_dependent.cpp"
    )
 add_executable(${TARGET} ${SOURCE_FILES})

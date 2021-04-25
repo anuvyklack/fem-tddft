@@ -10,9 +10,9 @@ using std::cin, std::cout, std::endl;
 namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
-// Check if this app is runnint in parellel with "mpirun".
-// Exit with error if true.
-void exit_if_mpi (char** &argv) // name_of_executable
+
+
+void exit_if_mpi (char** &argv)  // std::string name_of_executable
 {
   if (dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) != 1)
   {
@@ -25,8 +25,12 @@ void exit_if_mpi (char** &argv) // name_of_executable
   }
 }
 
-// Parse command-line options.
-po::variables_map parse_cmdline_options (int &argc, char **&argv)
+
+
+/**
+ * Build on top of the Boost.Program_options library.
+ */
+po::variables_map parse_cmdline_options (int &argc, char** &argv)
 {
   const unsigned int default_dim {2};
   const auto prm_file_name = "parameters.prm";
@@ -86,9 +90,10 @@ po::variables_map parse_cmdline_options (int &argc, char **&argv)
   return options;
 }
 
-// Parse parameters file
-void parse_parameters_file (dealii::ParameterHandler &parameters,
-                            std::string prm_file_name)
+
+
+void parse_parameters_file (const std::string &prm_file_name,
+                            dealii::ParameterHandler &parameters)
 {
   parameters.declare_entry(
       "Global mesh refinement steps",
@@ -115,4 +120,4 @@ void parse_parameters_file (dealii::ParameterHandler &parameters,
 }
 
 
-// vim: ts=2 sts=2 sw=2 fdm=marker
+// vim: ts=2 sts=2 sw=2 fdm=syntax

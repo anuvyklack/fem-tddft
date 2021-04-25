@@ -1,7 +1,21 @@
-.vscode
-build*
-CMakeLists.txt.user
-tags
-*.o
-*.not
-*.autosave
+# Ignore all
+*
+# Unignore all directories in the root of the repository, because:
+# "It is not possible to re-include a file if a parent directory
+# of that file is excluded."
+!doc/
+!include/
+!src/
+
+# Unignore what necessary
+!CMakeLists.txt
+!Doxyfile
+
+# deal.II parameters files
+!*.prm
+
+# C++ sources and headers files
+!*.cpp
+!*.hpp
+!*.h
+!*.c

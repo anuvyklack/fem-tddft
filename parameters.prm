@@ -1,17 +1,26 @@
 # Listing of Parameters
 # ---------------------
-# Use built-in mesh type.
-# set Use built-in mesh type =
+
+# subsection Mesh
+  # Use built-in mesh.
+  # Possible values: QUANTUM_WELL, SHELL
+  # set Use built-in mesh = QUANTUM_WELL
+
+  # The number of times the 1-cell coarse mesh should be refined globally for
+  # our computations.
+  set Global mesh refinement steps = 6
+# end
 
 # The polynomial degree
 set Finite element order = 2
 
-# The number of times the 1-cell coarse mesh should be refined globally for
-# our computations.
-set Global mesh refinement steps = 6
-
 # The number of eigenvalues/eigenfunctions to be computed.
-set Number of eigenvalues/eigenfunctions = 3
+set Number of eigenvalues/eigenfunctions = 2
 
 # A functional description of the potential.
 set Potential = 0
+
+# subsection Time propogation
+#   set Time = 0
+#   set Time step size = 0.1
+# end

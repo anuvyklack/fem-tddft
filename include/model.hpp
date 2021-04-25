@@ -11,44 +11,54 @@
 #include <fstream>
 #include <filesystem>
 
+/// @brief The problem types that can be attached to a Model to solve.
 enum ProblemType {
   GROUND_STATE,
+  HARTREE,
   TIME_DEPENDENT
 };
 
+/// @brief The built-in meshes types, that can be used instead of specifying an input
+/// file with mesh to read.
 enum MeshType {
   SHELL,
   QUANTUM_WELL
 };
 
-class BaseProblem; // forward declaration
+// forward declaration
+class BaseProblem;
 // template<int dim> class EigenvalueProblem;
 // template<int dim> class TDSE;
 
-
+/**
+ * @brief The main class that represents the considering finite-element model.
+ */
 template <int dim>
 class Model
 {
 public:
-  Model (dealii::ParameterHandler &parameters);
+  Model (const dealii::ParameterHandler &parameters);
   void set_problem_type (ProblemType type);
   void use_default_mesh(MeshType type);
 
+  /// @brief Save the current Model state into file.
   void save_to_file ( std::string file_name = "data_for_restore" ) const;
+
+  /// @brief Restore the saved Model state from file.
   void load_from_file ( std::string file_name = "data_for_restore" );
+
   void save_mesh() const;
   void output_ground_states() const;
 
-  dealii::ParameterHandler &parameters;
+  const dealii::ParameterHandler &parameters;
 
   std::string name;
   std::filesystem::path results_path;
 
   dealii::Triangulation<dim> mesh;
-  // std::unique_ptr <dealii::FiniteElement<dim>> fe;
   dealii::DoFHandler<dim> dof_handler {mesh};
 
-  std::vector<dealii::Vector<double>> ground_states;
+  std::vector<dealii::Vector<double>> stationary_states; // стационарные состояния
 
   std::unique_ptr <BaseProblem> problem;
 

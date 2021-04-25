@@ -1,6 +1,6 @@
 #include "general.hpp"
 #include "model.hpp"
-#include "ground_state.hpp"
+// #include "stationary_schrodinger.hpp"
 // #include "time_dependent.hpp"
 
 #include <deal.II/base/mpi.h>

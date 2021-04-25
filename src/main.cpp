@@ -1,10 +1,10 @@
 #include "general.hpp"
 #include "model.hpp"
-#include "ground_state.hpp"
+// #include "stationary_schrodinger.hpp"
 // #include "time_dependent.hpp"
 
 #include <deal.II/base/mpi.h>
-// #include <deal.II/grid/grid_generator.h>
+#include <deal.II/base/parameter_handler.h>
 
 #include <boost/program_options.hpp>
 #include <iostream>
@@ -16,9 +16,10 @@ using std::cin, std::cout, std::endl;
 namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
-int main(int argc, char *argv[])
+// int main(int argc, char *argv[])
+int main(int argc, char** argv)
 {
-  const unsigned int dim {2};
+  const unsigned int dim {1};
 
   // Check if this app is runnint in parellel with "mpirun". Exit with error if true.
   dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
@@ -28,7 +29,13 @@ int main(int argc, char *argv[])
   po::variables_map options = parse_cmdline_options (argc, argv);
   // Parse parameters file
   dealii::ParameterHandler parameters;
-  parse_parameters_file (parameters, options["parameters"].as<std::string>());
+  parse_parameters_file (options["parameters"].as<std::string>(), parameters);
+
+  parameters.print_parameters(cout,
+      dealii::ParameterHandler::PRM |
+      // dealii::ParameterHandler::LaTeX |
+      dealii::ParameterHandler::KeepDeclarationOrder
+  );
 
 
   Model<dim> model {parameters};
@@ -42,11 +49,13 @@ int main(int argc, char *argv[])
 
   // cout << model.get_fe().get_name() << endl;
 
-  // model.set_problem_type(GROUND_STATE);
-  // model.problem->run();
+  model.set_problem_type(GROUND_STATE);
+  model.problem->run();
+  model.output_ground_states();
+  model.save_to_file();  // Serialize ground state for futher calculations.
 
-  // model.output_ground_states();
-  // model.save_to_file();  // Serialize ground state for futher calculations.
+  model.set_problem_type(HARTREE);
+  model.problem->run();
 
   // model.set_problem_type(TIME_DEPENDENT);
   // model.problem->run();

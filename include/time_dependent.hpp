@@ -47,9 +47,9 @@ private:
   dealii::Vector<complex<double>> solution;
   dealii::Vector<complex<double>> system_rhs;
 
-  double time = 0;
-  const double time_step {0.00001};
-  unsigned int timestep_number {0};
+  double       time;
+  const double time_step;
+  unsigned int timestep_number;
   const double end_time;
 };
 

@@ -1,5 +1,6 @@
 #include "model.hpp"
-#include "ground_state.hpp"
+#include "stationary_schrodinger.hpp"
+#include "hartree.hpp"
 #include "time_dependent.hpp"
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/numerics/data_out.h>
@@ -9,7 +10,7 @@ using std::cin, std::cout, std::endl;
 namespace fs = std::filesystem;
 
 template<int dim>
-Model<dim>::Model (ParameterHandler &parameters)
+Model<dim>::Model (const ParameterHandler &parameters)
   : parameters(parameters)
 {
   set_fe( parameters.get_integer("Finite element order") );
@@ -21,6 +22,11 @@ void Model<dim>::set_fe (const unsigned int &order)
   fe = std::make_unique <dealii::FE_Q<dim>> (order);
 }
 
+/**
+ * @brief Set problem type associated with model.
+ *
+ * Factory method.
+ */
 template<int dim>
 void Model<dim>::set_problem_type (ProblemType type)
 {
@@ -29,6 +35,9 @@ void Model<dim>::set_problem_type (ProblemType type)
     case GROUND_STATE:
       // cout << "ground state" << endl;
       problem = std::make_unique<EigenvalueProblem<dim>>(*this);
+      break;
+    case HARTREE:
+      problem = std::make_unique<HartreeProblem<dim>>(*this);
       break;
     case TIME_DEPENDENT:
       // cout << "time dependent" << endl;
@@ -67,7 +76,7 @@ void Model<dim>::save_to_file (std::string file_name) const
   std::ofstream file(file_path);
   // boost::archive::text_oarchive archive(file);
   boost::archive::binary_oarchive archive(file);
-  archive << fe->degree << mesh << dof_handler << ground_states;
+  archive << fe->degree << mesh << dof_handler << stationary_states;
 }
 
 template <int dim>
@@ -80,7 +89,7 @@ void Model<dim>::load_from_file (std::string file_name)
   archive >> fe_degree;
   set_fe(fe_degree);
   // dof_handler.distribute_dofs(fe);
-  archive >> mesh >> dof_handler >> ground_states;
+  archive >> mesh >> dof_handler >> stationary_states;
 }
 
 template <int dim>
@@ -98,8 +107,8 @@ void Model<dim>::output_ground_states() const
   DataOut<dim> data_out;
   data_out.attach_dof_handler(dof_handler);
 
-  for (unsigned int i = 0; i < ground_states.size(); ++i)
-    data_out.add_data_vector(ground_states[i],
+  for (unsigned int i = 0; i < stationary_states.size(); ++i)
+    data_out.add_data_vector(stationary_states[i],
                              std::string("grond_state_") +
                                  Utilities::int_to_string(i));
   data_out.build_patches();

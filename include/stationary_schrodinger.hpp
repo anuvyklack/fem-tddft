@@ -1,5 +1,5 @@
-#ifndef GROUND_STATE_HPP
-#define GROUND_STATE_HPP
+#ifndef STATIONARY_SCHRODINGER_HPP
+#define STATIONARY_SCHRODINGER_HPP
 
 #include "model.hpp"
 
@@ -17,7 +17,7 @@ class EigenvalueProblem : public BaseProblem
 {
 public:
   EigenvalueProblem (Model<dim> &model);
-  virtual void run() override;
+  void run() override;
 
   // void test();
 
@@ -42,5 +42,6 @@ private:
   std::vector<double> eigenvalues;
 };
 
-#endif // GROUND_STATE_HPP
+#endif // STATIONARY_SCHRODINGER_HPP
+
 // vim: ts=2 sts=2 sw=2

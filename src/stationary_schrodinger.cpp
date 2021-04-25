@@ -1,4 +1,4 @@
-#include "ground_state.hpp"
+#include "stationary_schrodinger.hpp"
 #include "model.hpp"
 
 #include <deal.II/base/function_parser.h>
@@ -38,6 +38,8 @@ using namespace dealii;
 using std::cin, std::cout, std::endl;
 namespace fs = std::filesystem;
 
+
+
 template <int dim>
 EigenvalueProblem<dim>::EigenvalueProblem (Model<dim> &model)
   : model(model),
@@ -47,6 +49,8 @@ EigenvalueProblem<dim>::EigenvalueProblem (Model<dim> &model)
     dof_handler(model.dof_handler)
 {}
 
+
+
 template <int dim>
 void EigenvalueProblem<dim>::setup_system() //{{{
 {
@@ -55,6 +59,7 @@ void EigenvalueProblem<dim>::setup_system() //{{{
   mesh.refine_global( parameters.get_integer("Global mesh refinement steps") );
   dof_handler.distribute_dofs(fe);
 
+  // Dirichlet boundary conditions
   DoFTools::make_zero_boundary_constraints(dof_handler, constraints);
   constraints.close();
 
@@ -75,6 +80,8 @@ void EigenvalueProblem<dim>::setup_system() //{{{
 
 } //}}}
 
+
+
 template <int dim>
 void EigenvalueProblem<dim>::assemble_system() //{{{
 {
@@ -84,64 +91,61 @@ void EigenvalueProblem<dim>::assemble_system() //{{{
                           update_values | update_gradients |
                               update_quadrature_points | update_JxW_values);
 
-  const unsigned int dofs_per_cell = fe.dofs_per_cell;
-  const unsigned int n_q_points    = quadrature_formula.size();
+  const unsigned int dofs_per_cell = fe_values.dofs_per_cell; // fe.dofs_per_cell;
 
-  FullMatrix<double> cell_stiffness_matrix(dofs_per_cell, dofs_per_cell);
-  FullMatrix<double> cell_mass_matrix(dofs_per_cell, dofs_per_cell);
+  FullMatrix<double> cell_stiffness_matrix (dofs_per_cell, dofs_per_cell);
+  FullMatrix<double> cell_mass_matrix (dofs_per_cell, dofs_per_cell);
 
-  std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
+  std::vector<types::global_dof_index> local_dof_indices (dofs_per_cell);
 
   FunctionParser<dim> potential;
   potential.initialize(FunctionParser<dim>::default_variable_names(),
                        parameters.get("Potential"),
                        typename FunctionParser<dim>::ConstMap());
 
-  std::vector<double> potential_values(n_q_points);
+  std::vector<double> potential_values (fe_values.n_quadrature_points);
+
   for (const auto &cell : dof_handler.active_cell_iterators())
-    {
-      fe_values.reinit(cell);
-      cell_stiffness_matrix = 0;
-      cell_mass_matrix      = 0;
+  {
+    fe_values.reinit(cell);
+    cell_stiffness_matrix = 0;
+    cell_mass_matrix      = 0;
 
-      potential.value_list(fe_values.get_quadrature_points(),
-                           potential_values);
+    potential.value_list(fe_values.get_quadrature_points(),
+                         potential_values);
 
-      for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
-        for (unsigned int i = 0; i < dofs_per_cell; ++i)
-          for (unsigned int j = 0; j < dofs_per_cell; ++j)
-          {
-            cell_stiffness_matrix(i, j) +=
-                (
-                  1. / 2 *                            // 1/2
-                  fe_values.shape_grad(i, q_point) *  // grad phi_i
-                  fe_values.shape_grad(j, q_point)    // grad phi_j
-                  +
-                  potential_values[q_point] *         // V(r)
-                  fe_values.shape_value(i, q_point) * // phi_i
-                  fe_values.shape_value(j, q_point)   // phi_j
-                )
-                * fe_values.JxW(q_point);             // J*dr
+    for (const unsigned int q_index : fe_values.quadrature_point_indices())
+      for (const unsigned int i : fe_values.dof_indices())
+        for (const unsigned int j : fe_values.dof_indices())
+        {
+          cell_stiffness_matrix(i, j) +=
+              (
+                1./2 *                              // 1/2
+                fe_values.shape_grad(i, q_index) *  // grad phi_i
+                fe_values.shape_grad(j, q_index)    // grad phi_j
+                +
+                potential_values[q_index] *         // V(r)
+                fe_values.shape_value(i, q_index) * // phi_i
+                fe_values.shape_value(j, q_index)   // phi_j
+              )
+              * fe_values.JxW(q_index);             // J*dr
 
-            cell_mass_matrix(i, j) +=
-                (
-                  fe_values.shape_value(i, q_point) * // grad(phi_i)
-                  fe_values.shape_value(j, q_point)   // grad(phi_j)
-                )
-                * fe_values.JxW(q_point);             // J*dr
-          }
+          cell_mass_matrix(i, j) +=
+              (
+                fe_values.shape_value(i, q_index) * // grad(phi_i)
+                fe_values.shape_value(j, q_index)   // grad(phi_j)
+              )
+              * fe_values.JxW(q_index);             // J*dr
+        }
 
-      // Now that we have the local matrix contributions, we transfer them
-      // into the global objects and take care of zero boundary constraints:
-      cell->get_dof_indices(local_dof_indices);
-
-      constraints.distribute_local_to_global(cell_stiffness_matrix,
-                                             local_dof_indices,
-                                             stiffness_matrix);
-      constraints.distribute_local_to_global(cell_mass_matrix,
-                                             local_dof_indices,
-                                             mass_matrix);
-    }
+    cell->get_dof_indices(local_dof_indices);
+    constraints.distribute_local_to_global(cell_stiffness_matrix,
+                                           local_dof_indices,
+                                           stiffness_matrix);
+    constraints.distribute_local_to_global(cell_mass_matrix,
+                                           local_dof_indices,
+                                           mass_matrix);
+  }
 
   // At the end of the function, we tell PETSc that the matrices have now
   // been fully assembled and that the sparse matrix representation can now
@@ -165,6 +169,8 @@ void EigenvalueProblem<dim>::assemble_system() //{{{
             << "[" << min_spurious_eigenvalue << ","
             << max_spurious_eigenvalue << "]" << std::endl;
 } //}}}
+
+
 
 template <int dim>
 unsigned int EigenvalueProblem<dim>::solve() //{{{
@@ -190,12 +196,13 @@ unsigned int EigenvalueProblem<dim>::solve() //{{{
   return solver_control.last_step();
 } //}}}
 
+
+
+/// @brief Save eigenfunctions and interpolated potential.
 template <int dim>
 void EigenvalueProblem<dim>::output_results() const //{{{
 {
-  // Save eigenfunctions and interpolated potential.
   DataOut<dim> data_out;
-
   data_out.attach_dof_handler(dof_handler);
 
   for (unsigned int i = 0; i < eigenfunctions.size(); ++i)
@@ -221,6 +228,8 @@ void EigenvalueProblem<dim>::output_results() const //{{{
   data_out.write_vtu(output);
 } //}}}
 
+
+
 template <int dim>
 void EigenvalueProblem<dim>::run() //{{{
 {
@@ -239,14 +248,22 @@ void EigenvalueProblem<dim>::run() //{{{
 
   // Convert files from dealii::PETScWrappers::MPI::Vector to dealii::Vector.
   {
-    model.ground_states.resize( eigenfunctions.size() );
+    model.stationary_states.resize( eigenfunctions.size() );
     for (unsigned int i = 0; i < eigenfunctions.size(); ++i)
-      model.ground_states[i] = eigenfunctions[i];
+      model.stationary_states[i] = eigenfunctions[i];
 
     // model.ground_states.clear();
     // model.ground_states.reserve( eigenfunctions.size() );
     // for (auto eigfun : eigenfunctions)
     //   model.ground_states.emplace_back( eigfun );
+  }
+
+  // Normalize ground states wave functions.
+  {
+    for (dealii::Vector<double> &state : model.stationary_states)
+    {
+      state /= state.l2_norm();
+    }
   }
 
   output_results();
@@ -258,9 +275,13 @@ void EigenvalueProblem<dim>::run() //{{{
 
 } //}}}
 
+
+
 // template <int dim>
 // void EigenvalueProblem<dim>::test()
 // {}
+
+
 
 // Explicit template instantiation
 template class EigenvalueProblem<1>;
