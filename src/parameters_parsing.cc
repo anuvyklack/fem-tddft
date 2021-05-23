@@ -1,6 +1,9 @@
-#include "general.hpp"
-#include <deal.II/base/mpi.h>
-#include <deal.II/base/parameter_handler.h>
+#include "parameters_parsing.hpp"
+#include "utilities.hpp"
+#include "model.hpp"
+#include "dft.hpp"
+
+#include <deal.II/base/parameter_acceptor.h>
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <filesystem>
@@ -11,25 +14,7 @@ namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
 
-
-void exit_if_mpi (char** &argv)  // std::string name_of_executable
-{
-  if (dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) != 1)
-  {
-    if (dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    {
-      std::cerr << "This program can only be run in serial, use "
-                << argv[0] << endl;
-    }
-    std::exit(1);
-  }
-}
-
-
-
-/**
- * Build on top of the Boost.Program_options library.
- */
+/// Build on top of the Boost.Program_options library.
 po::variables_map parse_cmdline_options (int &argc, char** &argv)
 {
   const unsigned int default_dim {2};
@@ -55,7 +40,8 @@ po::variables_map parse_cmdline_options (int &argc, char** &argv)
   all_options.add(possible_options)
              .add(hidden_options);
 
-  // Positional options.
+  // Positional options. I.e. options that passed without any flags.
+  // In this key it is only option 'parameters'.
   po::positional_options_description positional_options;
   positional_options.add("parameters", -1);
 
@@ -63,9 +49,8 @@ po::variables_map parse_cmdline_options (int &argc, char** &argv)
   parser.options(all_options)
         .positional(positional_options)
         .style( po::command_line_style::default_style |
-                // Allow single dash for long options: -foo=10
-                po::command_line_style::allow_long_disguise |
-                po::command_line_style::allow_slash_for_short );
+                po::command_line_style::allow_slash_for_short |
+                po::command_line_style::allow_long_disguise );
   po::parsed_options parsed_options = parser.run();
 
   po::variables_map options;
@@ -92,32 +77,44 @@ po::variables_map parse_cmdline_options (int &argc, char** &argv)
 
 
 
-void parse_parameters_file (const std::string &prm_file_name,
-                            dealii::ParameterHandler &parameters)
+template<int dim>
+void parse_parameters (int &argc, char** &argv)
 {
-  parameters.declare_entry(
-      "Global mesh refinement steps",
-      "5",
-      dealii::Patterns::Integer(0, 20),
-      "The number of times the 1-cell coarse mesh should be refined globally "
-      "for our computations.");
-  parameters.declare_entry(
-      "Finite element order",
-      "1",
-      dealii::Patterns::Integer(1, 5),
-      "Polynomial degree.");
-  parameters.declare_entry(
-      "Number of eigenvalues/eigenfunctions",
-      "5",
-      dealii::Patterns::Integer(0, 100),
-      "The number of eigenvalues/eigenfunctions to be computed.");
-  parameters.declare_entry(
-      "Potential",
-      "0",
-      dealii::Patterns::Anything(),
-      "A functional description of the potential.");
-  parameters.parse_input( prm_file_name );
+  // Parse command-line options.
+  po::variables_map options = parse_cmdline_options (argc, argv);
+  auto prm_file_name = options["parameters"].as<std::string>();
+
+  Model<dim>::Parameters::get_parameters();
+  DFT_Parameters::get_parameters();
+
+  // Parse parameters file
+  dealii::ParameterAcceptor::initialize(
+      prm_file_name,
+      "used_parameters.prm",
+      dealii::ParameterHandler::Short |
+        dealii::ParameterHandler::KeepDeclarationOrder,
+      dealii::ParameterAcceptor::prm,
+      dealii::ParameterHandler::KeepDeclarationOrder
+  );
 }
 
 
-// vim: ts=2 sts=2 sw=2 fdm=syntax
+
+// {
+//   parameters.declare_entry(
+//       "Potential",
+//       "0",
+//       dealii::Patterns::Anything(),
+//       "A functional description of the potential.");
+//   parameters.parse_input( prm_file_name );
+// }
+
+
+
+/*--------------- Explicit templates instantiation --------------------------*/
+
+template void parse_parameters<1>(int &argc, char** &argv);
+template void parse_parameters<2>(int &argc, char** &argv);
+template void parse_parameters<3>(int &argc, char** &argv);
+
+// vim: ts=2 sts=2 sw=2

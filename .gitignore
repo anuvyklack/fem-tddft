@@ -1,8 +1,10 @@
 # Ignore all
 *
-# Unignore all directories in the root of the repository, because:
-# "It is not possible to re-include a file if a parent directory
-# of that file is excluded."
+# Unignore all directories in the root of the repository, because
+# it is not possible to re-include a file if a parent directory
+# of that file is excluded.
+!bundled/
+!bundled/magic_enum/
 !doc/
 !include/
 !src/
@@ -10,11 +12,13 @@
 # Unignore what necessary
 !CMakeLists.txt
 !Doxyfile
+!LICENSE
 
 # deal.II parameters files
 !*.prm
 
 # C++ sources and headers files
+!*.cc
 !*.cpp
 !*.hpp
 !*.h

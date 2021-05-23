@@ -1,7 +1,8 @@
-#ifndef STATIONARY_SCHRODINGER_HEADER
-#define STATIONARY_SCHRODINGER_HEADER
+#ifndef KOHN_SHAM_HEADER
+#define KOHN_SHAM_HEADER
 
 #include "model.hpp"
+#include "dft.hpp"
 
 #include <deal.II/grid/tria.h>
 #include <deal.II/dofs/dof_handler.h>
@@ -13,25 +14,28 @@
 #include <filesystem>
 
 template <int dim>
-class EigenvalueProblem : public BaseProblem
+class KohnSham : public BaseProblem
 {
 public:
-  EigenvalueProblem (Model<dim> &model);
-  void run() override;
+  KohnSham (Model<dim> &model,
+            const DFT_Parameters & parameters,
+            DFT_Data & data);
 
-private:
+  std::vector<dealii::Vector<double>> run();
+
+// private:
   void setup_system();
   void assemble_system();
   unsigned int solve();
-  void output_results() const;
+  std::vector<dealii::Vector<double>> get_orbitals() const;
 
-  Model<dim> &model;
+  Model<dim> & model;
+  const DFT_Parameters & parameters;
+  dealii::Vector<double> & hartree_potential;
 
-  const dealii::ParameterHandler &parameters;
-
-  dealii::Triangulation<dim> &mesh;
-  const dealii::FiniteElement<dim> &fe;
-  dealii::DoFHandler<dim> &dof_handler;
+  dealii::Triangulation<dim> & mesh;
+  const dealii::FiniteElement<dim> & fe;
+  dealii::DoFHandler<dim> & dof_handler;
 
   dealii::AffineConstraints<double> constraints;
 
@@ -40,5 +44,6 @@ private:
   std::vector<double> eigenvalues;
 };
 
-#endif // STATIONARY_SCHRODINGER_HEADER
+
+#endif // KOHN_SHAM_HEADER
 // vim: ts=2 sts=2 sw=2

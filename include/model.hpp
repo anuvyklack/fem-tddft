@@ -1,34 +1,36 @@
-#ifndef MODEL_HPP
-#define MODEL_HPP
+#ifndef MODEL_HEADER
+#define MODEL_HEADER
 
-// #include "ground_state.hpp"
-
+#include "parameters_parsing.hpp"
 #include <deal.II/grid/tria.h>
 #include <deal.II/fe/fe.h>
 #include <deal.II/dofs/dof_handler.h>
-#include <deal.II/base/parameter_handler.h>
 #include <deal.II/grid/grid_out.h>
+#include <deal.II/base/parameter_acceptor.h>
+#include <deal.II/base/timer.h>
+#include <boost/any.hpp>
 #include <fstream>
 #include <filesystem>
 
-/// @brief The problem types that can be attached to a Model to solve.
-enum ProblemType {
-  GROUND_STATE,
-  HARTREE,
-  TIME_DEPENDENT
-};
 
-/// @brief The built-in meshes types, that can be used instead of specifying an input
-/// file with mesh to read.
-enum MeshType {
-  SHELL,
-  QUANTUM_WELL
-};
+// /// @brief The problem types that can be attached to a Model to solve.
+// enum class ProblemType
+// {
+//   Stationary_Schrodinger, ///< Stationary Schrodinger equation.
+//   Hartree,
+//   DFT,
+//   DFT_Uniform, ///< Uniform mesh refinment.
+//   DFT_Adaptive, ///< Adaptive mesh refinment.
+//   Time_Dependent ///< Time dependent Schrodinger equation.
+// };
 
-// forward declaration
-class BaseProblem;
-// template<int dim> class EigenvalueProblem;
-// template<int dim> class TDSE;
+/// @brief The built-in meshes types.
+/// Can be used instead of specifying an input file with mesh to read.
+enum BuiltinMesh
+{
+  quantum_well,
+  shell,
+};
 
 /**
  * @brief The main class that represents the considering finite-element model.
@@ -37,9 +39,52 @@ template <int dim>
 class Model
 {
 public:
-  Model (const dealii::ParameterHandler &parameters);
-  void set_problem_type (ProblemType type);
-  void use_default_mesh(MeshType type);
+  /// The Meyers Singleton.
+  class Parameters : public dealii::ParameterAcceptor
+  {
+  public:
+    static Parameters & get_parameters()
+    {
+      static Model<dim>::Parameters prm;
+      return prm;
+    }
+
+    /**
+     * If @p true then @link which_mesh_to_use @endlink attribute stores
+     *  value of type * @link BuiltinMesh @endlink.
+     * If @p false @link which_mesh_to_use @endlink stores path to mesh file.
+     */
+    bool use_built_in_mesh;
+
+    /**
+     * Stores either mesh file path or one of built-in meshes identifiers
+     * (value of type @link BuiltinMesh @endlink). Which one is stored
+     * depends on @link use_built_in_mesh @endlink property.
+     */
+    boost::any mesh_to_use;
+
+    unsigned int global_mesh_refinement_steps = 5;
+
+    /// The finite element name to create finite element object from.
+    std::string  fe_name;
+    std::string  fe_type = "FE_Q";
+    unsigned int fe_order = 1;
+
+    std::string results_folder = "auto";
+
+    unsigned int verbosity_level = 10;
+
+    bool initialized = false;
+
+  private:
+    Parameters(); /* Constructor should be private! */
+    Parameters (const Parameters& other) = delete;
+    Parameters& operator=(const Parameters&) = delete;
+
+    virtual void parse_parameters (dealii::ParameterHandler & prm) override;
+  };
+
+  Model (Parameters & parameters);
 
   /// @brief Save the current Model state into file.
   void save_to_file ( std::string file_name = "data_for_restore" ) const;
@@ -47,10 +92,13 @@ public:
   /// @brief Restore the saved Model state from file.
   void load_from_file ( std::string file_name = "data_for_restore" );
 
-  void save_mesh() const;
-  void output_ground_states() const;
+  void output_mesh() const;
+  // void output_stationary_states() const;
 
-  const dealii::ParameterHandler &parameters;
+  /// @brief Returns the constant reference to @p fe attribute.
+  inline const dealii::FiniteElement<dim>& get_fe() const { return *fe_ptr; }
+
+  const Parameters & parameters;
 
   std::string name;
   std::filesystem::path results_path;
@@ -58,29 +106,20 @@ public:
   dealii::Triangulation<dim> mesh;
   dealii::DoFHandler<dim> dof_handler {mesh};
 
-  std::vector<dealii::Vector<double>> stationary_states; // стационарные состояния
-
-  std::unique_ptr <BaseProblem> problem;
-
-  // Getters and Setters //////////////////////////////////////////////////////
-  const dealii::FiniteElement<dim>& get_fe() const { return *fe; }
-  // ////1/////////2/////////3/////////4/////////5/////////6/////////7/////////
-
-  // friend class EigenvalueProblem<dim>;
-  // friend class TDSE<dim>;
-
 private:
-  void set_fe (const unsigned int &order);
+  void set_mesh ();
 
-  std::unique_ptr <dealii::FiniteElement<dim>> fe;
+  std::unique_ptr <dealii::FiniteElement<dim>> fe_ptr;
 };
+
 
 
 class BaseProblem
 {
-public:
-  virtual void run() = 0;
+protected:
+  // dealii::TimerOutput monitor;
 };
 
-#endif
+
+#endif // MODEL_HEADER
 // vim: ts=2 sts=2 sw=2

@@ -1,7 +1,7 @@
 # PROJECT(schrodinger VERSION 0.0.3)
 PROJECT(fem-tddft)
 
-SET(TARGET schr)
+SET(TARGET tddft)
 
 # SET(DEAL_II_DIR ~/software/dealii-9.2.0/build)
 
@@ -13,11 +13,12 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Search for deal.II library.
 # ---------------------------
 FIND_PACKAGE(deal.II 9.2.0 QUIET
-  HINTS ${deal.II_DIR} ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
+  HINTS ${deal.II_DIR} ${DEAL_II_DIR} $ENV{DEAL_II_DIR}
   )
 IF(NOT ${deal.II_FOUND})
   MESSAGE(FATAL_ERROR "\n"
@@ -43,6 +44,7 @@ which conflict with the requirements."
     )
 ENDIF()
 
+
 # Search for Boost::program_options library.
 # ------------------------------------------
 find_package(Boost REQUIRED COMPONENTS program_options)
@@ -51,18 +53,26 @@ set(Boost_USE_STATIC_LIBS ON)
 
 # Setup targets
 # -------------
-# file(GLOB SOURCE_FILES "${PROJECT_SOURCE_DIR}/src/*.cpp")
-set(SOURCE_FILES "src/main.cpp"
-                 "src/general.cpp"
-                 "src/model.cpp"
-                 "src/stationary_schrodinger.cpp"
-                 "src/hartree.cpp"
-                 "src/time_dependent.cpp"
+# file(GLOB SOURCE_FILES "${PROJECT_SOURCE_DIR}/src/*.cc")
+set(SOURCE_FILES
+      "src/main.cc"
+      "src/utilities.cc"
+      "src/parameters_parsing.cc"
+      "src/model.cc"
+      "src/output_results.cc"
+      # "src/stationary_schrodinger.cc"
+      "src/kohn_sham.cc"
+      "src/hartree.cc"
+      "src/dft.cc"
+      # "src/time_dependent.cc"
    )
 add_executable(${TARGET} ${SOURCE_FILES})
 target_link_libraries(${TARGET} ${Boost_LIBRARIES})
-target_include_directories(${TARGET} PUBLIC
-                           "${PROJECT_SOURCE_DIR}/include")
+target_include_directories(
+    ${TARGET} PUBLIC
+    "${PROJECT_SOURCE_DIR}/include"
+    "${PROJECT_SOURCE_DIR}/bundled/magic_enum"
+  )
 
 # set_target_properties(${TARGET} PROPERTIES
 #     CXX_STANDARD 17
@@ -75,10 +85,10 @@ DEAL_II_SETUP_TARGET(${TARGET})
 
 # # Test target
 # # -----------------
-# set(TEST_SOURCE_FILES "src/test.cpp"
-#                       "src/general.cpp"
-#                       "src/model.cpp"
-#                       "src/ground_state.cpp"
+# set(TEST_SOURCE_FILES "src/test.cc"
+#                       "src/general.cc"
+#                       "src/model.cc"
+#                       "src/ground_state.cc"
 #    )
 # add_executable(test ${TEST_SOURCE_FILES})
 # target_link_libraries(test ${Boost_LIBRARIES})

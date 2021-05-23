@@ -1,5 +1,5 @@
-#ifndef TIME_DEPENDENT_HPP
-#define TIME_DEPENDENT_HPP
+#ifndef TIME_DEPENDENT_HEADER
+#define TIME_DEPENDENT_HEADER
 
 #include "model.hpp"
 #include <deal.II/base/parameter_handler.h>
@@ -53,5 +53,5 @@ private:
   const double end_time;
 };
 
-#endif // TIME_DEPENDENT_HPP
+#endif // TIME_DEPENDENT_HEADER
 // vim: ts=2 sts=2 sw=2

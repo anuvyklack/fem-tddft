@@ -1,7 +1,8 @@
-#ifndef HARTREE_HPP
-#define HARTREE_HPP
+#ifndef HARTREE_HEADER
+#define HARTREE_HEADER
 
 #include "model.hpp"
+#include "dft.hpp"
 
 #include <deal.II/grid/tria.h>
 #include <deal.II/base/parameter_handler.h>
@@ -12,40 +13,38 @@
 #include <filesystem>
 
 template <int dim>
-class HartreeProblem : public BaseProblem
+class Hartree : public BaseProblem
 {
 public:
-  HartreeProblem (Model<dim> &model);
-  void run() override;
+  Hartree (Model<dim> & model,
+           const DFT_Parameters & parameters,
+           DFT_Data & data);
 
-  // void test();
+  dealii::Vector<double> run();
 
-private:
+// private:
   void setup_system();
   void assemble_system();
   void solve();
-  void output_results() const;
 
-  Model<dim> &model;
-  const dealii::ParameterHandler &parameters;
+  Model<dim> & model;
+  const DFT_Parameters & parameters;
 
-  dealii::Triangulation<dim> &mesh;
-  const dealii::FiniteElement<dim> &fe;
-  dealii::DoFHandler<dim> &dof_handler;
+  dealii::Triangulation<dim> & mesh;
+  const dealii::FiniteElement<dim> & fe;
+  dealii::DoFHandler<dim> & dof_handler;
 
-  const std::vector<dealii::Vector<double>> &stationary_states;
+  dealii::Vector<double> & density;
 
   dealii::AffineConstraints<double> constraints;
-
-  const unsigned int number_of_electrons;
 
   dealii::SparsityPattern      sparsity_pattern;
   dealii::SparseMatrix<double> system_matrix;
 
   dealii::Vector<double> solution;
-  dealii::Vector<double> system_rhs;  ///< Actually, this is 4 * pi * density.
+  dealii::Vector<double> system_rhs;  ///< 4 * pi * density.
 
 };
 
-#endif
+#endif // HARTREE_HEADER
 // vim: ts=2 sts=2 sw=2
