@@ -1,5 +1,4 @@
 #include "parameters_parsing.hpp"
-#include "utilities.hpp"
 #include "model.hpp"
 #include "dft.hpp"
 

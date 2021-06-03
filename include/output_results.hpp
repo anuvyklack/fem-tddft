@@ -96,7 +96,7 @@ void ResultsOutput<dim>::add_data_vector(
   for (unsigned int i = 0; i < functions.size(); ++i)
     data_out.add_data_vector(
         functions[i],
-        functions_name + dealii::Utilities::int_to_string(i)
+        functions_name + "_" + dealii::Utilities::int_to_string(i+1)
     );
 
   // data_out.build_patches();

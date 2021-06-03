@@ -64,7 +64,9 @@ set(SOURCE_FILES
       "src/kohn_sham.cc"
       "src/hartree.cc"
       "src/dft.cc"
+      "src/xc.cc"
       # "src/time_dependent.cc"
+      "src/external_potentials.cc"
    )
 add_executable(${TARGET} ${SOURCE_FILES})
 target_link_libraries(${TARGET} ${Boost_LIBRARIES})

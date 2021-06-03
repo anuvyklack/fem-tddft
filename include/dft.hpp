@@ -2,8 +2,11 @@
 #define DFT_HEADER
 
 #include "model.hpp"
-#include <deal.II/base/parameter_acceptor.h>
+#include "kohn_sham.hpp"
+// #include "hartree.hpp"
 #include "parameters_parsing.hpp"
+#include <deal.II/base/parameter_acceptor.h>
+#include <deal.II/base/function.h>
 
 /**
  * @brief The parameters for DFT calculation.
@@ -18,6 +21,7 @@ public:
     static DFT_Parameters prm;
     return prm;
   }
+
   unsigned int number_of_electrons = 2;
 
   bool initialized = false;
@@ -30,12 +34,14 @@ private:
 
 
 
-struct DFT_Data
-{
-  std::vector<dealii::Vector<double>> kohn_sham_orbitals;
-  dealii::Vector<double> density;
-  dealii::Vector<double> hartree_potential;
-};
+// template <int dim>
+// struct DFT_Data
+// {
+//   std::vector<dealii::Vector<double>> kohn_sham_orbitals;
+//   dealii::Vector<double> density;
+//   dealii::Vector<double> hartree_potential;
+//   const dealii::Function<dim>* external_potential {nullptr};
+// };
 
 
 
@@ -44,17 +50,36 @@ class DFT : public BaseProblem
 {
 public:
   DFT (Model<dim> & model, DFT_Parameters & parameters);
+
+  DFT (Model<dim> & model, DFT_Parameters & prm,
+       const dealii::Function<dim> & external_potential);
+
   void run();
+
+  KohnShamOrbitals kohn_sham_orbitals;
+  dealii::Vector<double> density;
+  dealii::Vector<double> hartree_potential;
 
 // private:
   void solve_Kohn_Sham_problem();
   void solve_Hartree_problem();
-  void calculate_density();
   void refine_mesh();
+
+  dealii::Vector<double> get_density() const;
+
+  /// Return full potential energy.
+  dealii::Vector<double> get_potential() const;
 
   Model<dim> & model;
   const DFT_Parameters & parameters;
-  DFT_Data data;
+  const dealii::Function<dim>* external_potential {nullptr};
+
+  /**
+   * Auxiliary vector for some additioanl calculations.
+   * We create it here to avoid creation and consequently memory allocation
+   * (which is time-consuming) on each iteration when we need it.
+   */
+  dealii::Vector<double>  temp;
 };
 
 

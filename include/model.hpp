@@ -110,6 +110,8 @@ private:
   void set_mesh ();
 
   std::unique_ptr <dealii::FiniteElement<dim>> fe_ptr;
+
+  std::ofstream log_file { results_path / "log" };
 };
 
 

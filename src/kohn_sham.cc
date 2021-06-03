@@ -2,7 +2,7 @@
 #include "model.hpp"
 #include "dft.hpp"
 
-#include <deal.II/base/function_parser.h>
+// #include <deal.II/base/function_parser.h>
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/numerics/vector_tools.h>
 #include <deal.II/numerics/data_out.h>
@@ -20,12 +20,44 @@ namespace fs = std::filesystem;
 
 template <int dim>
 KohnSham<dim>::KohnSham (Model<dim> & model,
-                         const DFT_Parameters & parameters,
-                         DFT_Data & data)
-
+                         const Parameters & parameters,
+                         const dealii::Vector<double> & fe_potential,
+                         const dealii::Function<dim> & fun_potential)
   : model(model),
     parameters(parameters),
-    hartree_potential(data.hartree_potential),
+    fe_potential(&fe_potential),
+    fun_potential(&fun_potential),
+    mesh(model.mesh),
+    fe(model.get_fe()),
+    dof_handler(model.dof_handler)
+{}
+
+
+
+template <int dim>
+KohnSham<dim>::KohnSham (Model<dim> & model,
+                         const Parameters & parameters,
+                         const dealii::Vector<double> & fe_potential,
+                         const dealii::Function<dim> * fun_potential)
+  : model(model),
+    parameters(parameters),
+    fe_potential(&fe_potential),
+    fun_potential(fun_potential),
+    mesh(model.mesh),
+    fe(model.get_fe()),
+    dof_handler(model.dof_handler)
+{}
+
+
+
+template <int dim>
+KohnSham<dim>::KohnSham (Model<dim> & model,
+                         const Parameters & parameters,
+                         const dealii::Vector<double> & fe_potential)
+  : model(model),
+    parameters(parameters),
+    fe_potential(&fe_potential),
+    fun_potential(nullptr),
     mesh(model.mesh),
     fe(model.get_fe()),
     dof_handler(model.dof_handler)
@@ -78,10 +110,19 @@ void KohnSham<dim>::assemble_system()
   // potential.initialize(FunctionParser<dim>::default_variable_names(),
   //                      parameters.get("Potential"),
   //                      typename FunctionParser<dim>::ConstMap());
-  //
-  // std::vector<double> potential_values (fe_values.n_quadrature_points);
 
-  std::vector<double> hartree_values (fe_values.n_quadrature_points);
+  // Create vectors to store locally needed parts of the potentials defined
+  // both in the form of the finite element function and 'dealii::Function'
+  // object and reserve memory for those that we need.
+  std::vector<double> fe_potential_values;
+  std::vector<double> fun_potential_values;
+  if (fe_potential != nullptr)
+    fe_potential_values.resize(fe_values.n_quadrature_points);
+  if (fun_potential != nullptr)
+    fun_potential_values.resize(fe_values.n_quadrature_points);
+
+  // Create an auxiliary vector to accumulate the values of all potentials.
+  std::vector<double> potential_values (fe_values.n_quadrature_points, 0);
 
   for (const auto &cell : dof_handler.active_cell_iterators())
   {
@@ -89,39 +130,53 @@ void KohnSham<dim>::assemble_system()
     cell_stiffness_matrix = 0;
     cell_mass_matrix      = 0;
 
-    // potential.value_list(fe_values.get_quadrature_points(),
-    //                      potential_values);
+    // Deal with potential
+    {
+      // Get the values of the finite element function at the quadrature points.
+      if (fe_potential != nullptr)
+        fe_values.get_function_values(*fe_potential, fe_potential_values);
 
-    // Get only currently needed local part of hartree patential.
-    fe_values.get_function_values( hartree_potential, hartree_values );
+      // Get the values of the 'dealii::Function' object at the quadrature points.
+      if (fun_potential != nullptr)
+        fun_potential->value_list(fe_values.get_quadrature_points(),
+                                  fun_potential_values);
+
+      // Assign all values of total potential vector to 0.
+      potential_values.assign(fe_values.n_quadrature_points, 0);
+
+      for (unsigned int i = 0; i < potential_values.size(); ++i)
+        {
+          if (fe_potential != nullptr)
+            potential_values[i] += fe_potential_values[i];
+          if (fun_potential != nullptr)
+            potential_values[i] += fun_potential_values[i];
+        }
+    }
+
 
     for (const unsigned int q_index : fe_values.quadrature_point_indices())
       for (const unsigned int i : fe_values.dof_indices())
         for (const unsigned int j : fe_values.dof_indices())
-        {
-          cell_stiffness_matrix(i, j) +=
-              (
-                1./2 *                              // 1/2
-                fe_values.shape_grad(i, q_index) *  // grad phi_i
-                fe_values.shape_grad(j, q_index)    // grad phi_j
-                +
-                hartree_values[q_index] *           // V_Hartree(r)
-                fe_values.shape_value(i, q_index) * // phi_i
-                fe_values.shape_value(j, q_index)   // phi_j
-                // +
-                // potential_values[q_index] *         // V(r)
-                // fe_values.shape_value(i, q_index) * // phi_i
-                // fe_values.shape_value(j, q_index)   // phi_j
-              )
-              * fe_values.JxW(q_index);             // J*dr
+          {
+            cell_stiffness_matrix(i, j) +=
+                (
+                  1./2 *                              // 1/2
+                  fe_values.shape_grad(i, q_index) *  // grad phi_i
+                  fe_values.shape_grad(j, q_index)    // grad phi_j
+                  +
+                  potential_values[q_index] *         // V(r)
+                  fe_values.shape_value(i, q_index) * // phi_i
+                  fe_values.shape_value(j, q_index)   // phi_j
+                )
+                * fe_values.JxW(q_index);             // J*dr
 
-          cell_mass_matrix(i, j) +=
-              (
-                fe_values.shape_value(i, q_index) * // grad(phi_i)
-                fe_values.shape_value(j, q_index)   // grad(phi_j)
-              )
-              * fe_values.JxW(q_index);             // J*dr
-        }
+            cell_mass_matrix(i, j) +=
+                (
+                  fe_values.shape_value(i, q_index) * // grad phi_i
+                  fe_values.shape_value(j, q_index)   // grad phi_j
+                )
+                * fe_values.JxW(q_index);             // J*dr
+          }
 
     cell->get_dof_indices(local_dof_indices);
     constraints.distribute_local_to_global(cell_stiffness_matrix,
@@ -139,8 +194,9 @@ void KohnSham<dim>::assemble_system()
   mass_matrix.compress(VectorOperation::add);
 
 
-  double min_spurious_eigenvalue = std::numeric_limits<double>::max(),
-         max_spurious_eigenvalue = -std::numeric_limits<double>::max();
+  // Calculate spurious eigenvalues
+  min_spurious_eigenvalue = std::numeric_limits<double>::max();
+  max_spurious_eigenvalue = -std::numeric_limits<double>::max();
 
   for (unsigned int i = 0; i < dof_handler.n_dofs(); ++i)
     if (constraints.is_constrained(i))
@@ -150,10 +206,6 @@ void KohnSham<dim>::assemble_system()
         max_spurious_eigenvalue = std::max(max_spurious_eigenvalue, ev);
       }
 
-  cout
-  << "   Spurious eigenvalues are all in the interval "
-  << "[" << min_spurious_eigenvalue << "," << max_spurious_eigenvalue << "]"
-  << std::endl;
 }
 
 
@@ -185,45 +237,37 @@ unsigned int KohnSham<dim>::solve()
 
 template <int dim>
 std::vector<dealii::Vector<double>>
-KohnSham<dim>::get_orbitals() const
+KohnSham<dim>::get_wavefunctions() const
 {
-  std::vector<dealii::Vector<double>> orbitals;
+  std::vector<dealii::Vector<double>> wavefunctions;
 
   // Convert eigenfunctions from
   // 'dealii::PETScWrappers::MPI::Vector'
   // to 'dealii::Vector'.
-  {
-    orbitals.resize( eigenfunctions.size() );
-    for (unsigned int i=0; i < eigenfunctions.size(); ++i)
-      orbitals[i] = eigenfunctions[i];
+  wavefunctions.resize( eigenfunctions.size() );
+  for (unsigned int i=0; i < eigenfunctions.size(); ++i)
+    wavefunctions[i] = eigenfunctions[i];
 
-    // Second version:
+  // Second version:
 
-    // orbitals.reserve( eigenfunctions.size() );
-    // for (auto eigfun : eigenfunctions)
-    //   orbitals.emplace_back( eigfun );
-  }
+  // orbitals.reserve( eigenfunctions.size() );
+  // for (auto eigfun : eigenfunctions)
+  //   orbitals.emplace_back( eigfun );
 
   // Normalize result wave functions.
-  for (dealii::Vector<double> & state : orbitals)
-    state /= state.l2_norm();
+  for (dealii::Vector<double> & wf : wavefunctions)
+    wf /= wf.l2_norm();
 
-  return orbitals;
+  return wavefunctions;
 }
 
 
 
 template <int dim>
-std::vector<dealii::Vector<double>>
+KohnShamOrbitals
 KohnSham<dim>::run()
 {
   setup_system();
-
-  cout << "   Number of active cells:       "
-       << mesh.n_active_cells() << endl
-       << "   Number of degrees of freedom: " << dof_handler.n_dofs()
-       << endl;
-
   assemble_system();
 
   const unsigned int n_iterations = solve();
@@ -235,7 +279,10 @@ KohnSham<dim>::run()
     cout << "      Eigenvalue " << i << " : " << eigenvalues[i] << endl;
   cout << endl;
 
-  return get_orbitals();
+
+  return KohnShamOrbitals {eigenvalues, get_wavefunctions(),
+                           std::pair(min_spurious_eigenvalue, max_spurious_eigenvalue)};
+
 }
 
 
@@ -245,6 +292,5 @@ KohnSham<dim>::run()
 template class KohnSham<1>;
 template class KohnSham<2>;
 template class KohnSham<3>;
-
 
 // vim: ts=2 sts=2 sw=2

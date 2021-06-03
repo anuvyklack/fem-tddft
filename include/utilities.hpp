@@ -8,7 +8,28 @@
 /// Exit the application with error if true.
 void exit_if_mpi (char** &argv);
 
+
 /*--------------- Tlmplate and inline functions -----------------------------*/
+
+/**
+ * Returns
+ * @code
+ *   theta * new_vec + (1-theta) * old_vec
+ * @endcode
+ */
+template <typename Number>
+dealii::Vector<Number>
+mixer (const dealii::Vector<Number> & new_vec,
+       const dealii::Vector<Number> & old_vec,
+       double theta)
+{
+  dealii::Vector<Number> result (new_vec.size());
+  result.add(   theta, new_vec );
+  result.add( 1-theta, old_vec );
+  return result;
+}
+
+
 
 /**
  * @brief Return a string suitable to pass to @p dealii::Patterns::Selection()
@@ -27,11 +48,11 @@ void exit_if_mpi (char** &argv);
  *
  * @tparam ENUM the enumeration to process.
  */
-template <typename ENUM>
+template <typename Enum>
 std::string enum_to_selection_string()
 {
   std::string result;
-  for (auto name : magic_enum::enum_names<ENUM>())
+  for (auto name : magic_enum::enum_names<Enum>())
     result += static_cast<std::string>(name) + '|';
   if (result.back() == '|') result.pop_back(); // Delete the last '|" symbol.
   return result;

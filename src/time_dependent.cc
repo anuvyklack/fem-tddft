@@ -40,7 +40,8 @@ class Potential : public Function<dim>
   virtual double value(const Point<dim> & p,
                        const unsigned int component=0) const override
   {
-    // Does nothing, but suppress the compiler warning about the unused variable.
+    // Does nothing, but suppress the compiler 
+    // warning about the unused variable.
     (void)component;
     (void)p;
 

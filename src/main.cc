@@ -7,9 +7,11 @@
 #include "kohn_sham.hpp"
 #include "hartree.hpp"
 // #include "time_dependent.hpp"
+#include "external_potentials.hpp"
 
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/parameter_acceptor.h>
+#include <deal.II/numerics/vector_tools.h>
 
 #include <boost/program_options.hpp>
 #include <iostream>
@@ -43,53 +45,25 @@ try
     Model<dim> model {model_parameters};
 
     DFT_Parameters & dft_parameters = DFT_Parameters::get_parameters();
-    DFT<dim> dft {model, dft_parameters};
+    // PointCharge<dim> potential {1, dealii::Point<dim>()};
 
+    // DFT<dim> dft {model, dft_parameters, potential};
+    DFT<dim> dft {model, dft_parameters};
     dft.run();
 
 
-    // dealii::Vector<double> delta_density;
-    // dealii::Vector<double> delta_hartree_potential;
-    //
-    // dft.solve_Kohn_Sham_problem();
-    // dft.calculate_density();
-    // dft.solve_Hartree_problem();
-    //
-    // delta_density = dft.data.density;
-    // delta_hartree_potential = dft.data.hartree_potential;
-    //
-    // dft.solve_Kohn_Sham_problem();
-    // dft.calculate_density();
-    // dft.solve_Hartree_problem();
-    //
-    // delta_density -= dft.data.density;
-    // delta_hartree_potential -= dft.data.hartree_potential;
-    //
-    // cout << delta_density.linfty_norm() << endl
-    //      << delta_hartree_potential.linfty_norm() << endl;
-
-
-    // Hartree<dim> hartree {model, dft.parameters, dft.data};
-    // hartree.setup_system();
-    // hartree.assemble_system();
-
     ResultsOutput<dim> data_out {model};
-    data_out.add_data_vector(dft.data.kohn_sham_orbitals, "Kohn_Sham_orbitals");
-    data_out.add_data_vector(dft.data.density, "density");
-    data_out.add_data_vector(dft.data.hartree_potential, "hartree_potential");
+    data_out.add_data_vector(dft.kohn_sham_orbitals.wavefunctions, "Kohn_Sham_orbital");
+    data_out.add_data_vector(dft.density, "density");
+    data_out.add_data_vector(dft.hartree_potential, "hartree_potential");
+
+    // dealii::Vector<double> fe_potential (model.dof_handler.n_dofs());
+    // dealii::VectorTools::interpolate( model.dof_handler, potential, fe_potential );
+    // data_out.add_data_vector(fe_potential, "point_charge");
+
     data_out.write("dft_results");
 
-    // cout << "Calculate density." << endl;
-    // dft.calculate_density();
-    //
-    // cout << "Solve Hartree problem." << endl;
-    // dft.solve_Hartree_problem();
-
     // boost::regex_replace(str, boost::regex("[' ']{2,}"), " ");
-
-    // model.output_ground_states();
-    // model.save_to_file();  // Serialize ground state for futher calculations.
-
   }
 catch (std::exception &exc)
   {

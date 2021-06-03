@@ -1,5 +1,5 @@
 #include "model.hpp"
-#include "utilities.hpp"
+#include <magic_enum.hpp>
 #include "stationary_schrodinger.hpp"
 #include "hartree.hpp"
 #include "time_dependent.hpp"
@@ -56,8 +56,8 @@ Model<dim>::Parameters::Parameters()
   add_parameter(
       "Finite element space",
       fe_type,
-      "Which finite element space to use? "
-      "Accepts any standard finite element name "
+      "The finite element space to use. "
+      "This option accepts any standard finite element name "
       "defined in the DEAL II library.");
   add_parameter(
       "Finite element order",
@@ -141,10 +141,13 @@ Model<dim>::Model (Parameters & parameters)
 
   dof_handler.distribute_dofs(*fe_ptr);
 
+  // Create the folder for resulrs.
   results_path = fs::current_path() / parameters.results_folder;
   fs::create_directory(results_path);
 
-  deallog.depth_console( parameters.verbosity_level );
+  // Setup the logging.
+  deallog.attach(log_file);
+  deallog.depth_file( parameters.verbosity_level );
 }
 
 
@@ -186,10 +189,9 @@ void Model<dim>::set_mesh ()
 template <int dim>
 void Model<dim>::save_to_file (std::string file_name) const
 {
-  fs::path file_path = results_path / file_name;
-  std::ofstream file(file_path);
+  std::ofstream file (results_path / file_name);
   // boost::archive::text_oarchive archive(file);
-  boost::archive::binary_oarchive archive(file);
+  boost::archive::binary_oarchive archive (file);
   archive << fe_ptr->get_name() << mesh << dof_handler;
 }
 
@@ -198,9 +200,8 @@ void Model<dim>::save_to_file (std::string file_name) const
 template <int dim>
 void Model<dim>::load_from_file (std::string file_name)
 {
-  fs::path file_path = results_path / file_name;
-  std::ifstream file(file_path);
-  boost::archive::binary_iarchive archive(file);
+  std::ifstream file (results_path / file_name);
+  boost::archive::binary_iarchive archive (file);
 
   // Restore finite element object.
   std::string fe_name;

@@ -18,7 +18,7 @@ class Hartree : public BaseProblem
 public:
   Hartree (Model<dim> & model,
            const DFT_Parameters & parameters,
-           DFT_Data & data);
+           dealii::Vector<double> & density);
 
   dealii::Vector<double> run();
 
@@ -31,8 +31,16 @@ public:
   const DFT_Parameters & parameters;
 
   dealii::Triangulation<dim> & mesh;
-  const dealii::FiniteElement<dim> & fe;
-  dealii::DoFHandler<dim> & dof_handler;
+  const dealii::FiniteElement<dim> & model_fe;
+
+  /**
+   * The local for this class finite element object should be the same type
+   * as in @link Model @endlink class object given into constructor, but
+   * of the 2 time higher order.
+   */
+  std::unique_ptr <dealii::FiniteElement<dim>> fe;
+
+  dealii::DoFHandler<dim> dof_handler;
 
   dealii::Vector<double> & density;
 
