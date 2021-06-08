@@ -110,7 +110,7 @@ void parse_parameters (int &argc, char** &argv)
 
 
 
-/*--------------- Explicit templates instantiation --------------------------*/
+/*------------------ Explicit templates instantiation -------------------*/
 
 template void parse_parameters<1>(int &argc, char** &argv);
 template void parse_parameters<2>(int &argc, char** &argv);

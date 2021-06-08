@@ -2,6 +2,7 @@
 #define MODEL_HEADER
 
 #include "parameters_parsing.hpp"
+#include "double_output_stream.hpp"
 #include <deal.II/grid/tria.h>
 #include <deal.II/fe/fe.h>
 #include <deal.II/dofs/dof_handler.h>
@@ -86,11 +87,13 @@ public:
 
   Model (Parameters & parameters);
 
+  ~Model();
+
   /// @brief Save the current Model state into file.
-  void save_to_file ( std::string file_name = "data_for_restore" ) const;
+  void save_to_file (std::string file_name = "data_for_restore") const;
 
   /// @brief Restore the saved Model state from file.
-  void load_from_file ( std::string file_name = "data_for_restore" );
+  void load_from_file (std::string file_name = "data_for_restore");
 
   void output_mesh() const;
   // void output_stationary_states() const;
@@ -103,6 +106,8 @@ public:
   std::string name;
   std::filesystem::path results_path;
 
+  double_ostream out;
+
   dealii::Triangulation<dim> mesh;
   dealii::DoFHandler<dim> dof_handler {mesh};
 
@@ -111,7 +116,9 @@ private:
 
   std::unique_ptr <dealii::FiniteElement<dim>> fe_ptr;
 
-  std::ofstream log_file { results_path / "log" };
+  std::ofstream output_file;
+  std::ofstream log_file;
+  // std::ofstream log_file {results_path / "log"};
 };
 
 

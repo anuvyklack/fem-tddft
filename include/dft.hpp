@@ -2,11 +2,13 @@
 #define DFT_HEADER
 
 #include "model.hpp"
+#include "double_output_stream.hpp"
 #include "kohn_sham.hpp"
 // #include "hartree.hpp"
 #include "parameters_parsing.hpp"
 #include <deal.II/base/parameter_acceptor.h>
 #include <deal.II/base/function.h>
+#include <deal.II/base/convergence_table.h>
 
 /**
  * @brief The parameters for DFT calculation.
@@ -74,12 +76,16 @@ public:
   const DFT_Parameters & parameters;
   const dealii::Function<dim>* external_potential {nullptr};
 
+  double_ostream & out;
+
   /**
    * Auxiliary vector for some additioanl calculations.
    * We create it here to avoid creation and consequently memory allocation
    * (which is time-consuming) on each iteration when we need it.
    */
   dealii::Vector<double>  temp;
+
+  dealii::ConvergenceTable convergence_table;
 };
 
 

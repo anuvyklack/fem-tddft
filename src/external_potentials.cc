@@ -25,7 +25,7 @@ double PointCharge<dim>::value(const Point<dim> & p,
 }
 
 
-/*--------------- Explicit templates instantiation --------------------------*/
+/*------------------ Explicit templates instantiation -------------------*/
 
 template class PointCharge<2>;
 template class PointCharge<3>;

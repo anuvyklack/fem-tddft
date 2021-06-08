@@ -9,33 +9,28 @@ const double B1 = 21.7392245 * cbrt(4. * M_PI / 3.);
 const double B2 = 20.4562557 *  cbrt(16. * M_PI * M_PI / 9.);
 
 
+// LDA xc potential
 template <class Number>
-Vector<Number> get_nf0 (Vector<Number> n13)
+Vector<Number> get_VxcLDA (Vector<Number> n13) 
 {
   Vector<Number> result (n13.size());
-  for(unsigned int m = 0; m < n13.size(); ++m)
+  for (unsigned int m = 0; m < n13.size(); ++m) 
     {
-      double cr1 = n13(m);
-      double cr2 = cr1 * cr1;
-      double cr3 = cr1 * cr2;
-
       // exchange
-      result(m) = 4. * ax * cr1 / 9.;
+      double cr1 = n13[m]; // cubic root
+      result[m] = 4 * ax * cr1 / 3.;
 
       // correlation
+      double cr2 = cr1*cr1; // cubic root squared
       double arg = 1. + B1*cr1 + B2*cr2;
-      result(m) += ac * cr1
-                   * (4. * B1
-                      + (3. * B1 * B1 + 10.*B2) * cr1
-                      + 10. * B1 * B2 * cr2
-                      + 6. * B2 * B2 * cr3)
-                   / (9. * arg * arg);
+      result[m] += ac * ((B1*cr1 + 2*B2*cr2) / (3.*arg) + log(arg));
     }
   return result;
 }
 
-/*--------------- Explicit templates instantiation ----------------------*/
 
-template Vector<double> get_nf0 (Vector<double>);
+/*------------------ Explicit templates instantiation -------------------*/
+
+template Vector<double> get_VxcLDA (Vector<double>);
 
 // vim: ts=2 sts=2 sw=2

@@ -208,7 +208,7 @@ void TDSE<dim>::assemble_matrices()
 template <int dim>
 void TDSE<dim>::do_time_step()
 {
-                    // OutVector,  InVector
+  //                   OutVector   InVector
   matrix_current.vmult(system_rhs, solution);
 
   // SparseDirectUMFPACK takes the matrix and the right hand side vector and
@@ -246,7 +246,7 @@ namespace DataPostprocessors
   {
   public:
     ProbabilityDensity()
-        : DataPostprocessorScalar<dim>("Density", update_values)
+      : DataPostprocessorScalar<dim>("Density", update_values)
     {};
 
     virtual void evaluate_vector_field (
@@ -297,7 +297,8 @@ void TDSE<dim>::output_results() const
 
 
 
-// Explicit template instantiation
+/*------------------ Explicit templates instantiation -------------------*/
+
 template class TDSE<1>;
 template class TDSE<2>;
 template class TDSE<3>;

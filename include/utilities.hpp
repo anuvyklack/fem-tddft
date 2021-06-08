@@ -12,6 +12,8 @@ void exit_if_mpi (char** &argv);
 /*--------------- Tlmplate and inline functions -----------------------------*/
 
 /**
+ * @brief Pulay Mixing
+ *
  * Returns
  * @code
  *   theta * new_vec + (1-theta) * old_vec

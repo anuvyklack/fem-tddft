@@ -19,7 +19,7 @@ struct KohnShamOrbitals
 {
   std::vector<double> eigenvalues;
   std::vector <dealii::Vector<double>> wavefunctions;
-  std::pair<double, double> spurious_eigenvalues_interval;
+  std::array <double, 2> spurious_eigenvalues_interval;
 };
 
 
@@ -72,6 +72,7 @@ public:
   dealii::PETScWrappers::SparseMatrix stiffness_matrix, mass_matrix;
   std::vector <dealii::PETScWrappers::MPI::Vector> eigenfunctions;
   std::vector<double> eigenvalues;
+
   double min_spurious_eigenvalue;
   double max_spurious_eigenvalue;
 

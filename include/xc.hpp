@@ -9,19 +9,17 @@
 namespace xc {
 
   /**
-   * @brief Zero-frequency limit of longitudinal fxc.
+   * @brief LDA exchange-correlation potential.
    *
-   * Returns @p n*f0, where
-   * @verbatim f0 = d^2(n*exc(n))/dn^2 @endverbatim
-   * given by Eq.(i) in
-   * Ref. E. K. U. Gross and W. Kohn, Phys. Rev. Lett. 55, 2850 (1985).
+   * @note The cubic root of the electron density @p cr=pow(rho,1/3.) 
+   * is passed as an argument due to performance considerations.
    *
    * @param n13 Qubit root of electron density, @p n^{1/3}
    */
   template <class Number>
-  dealii::Vector<Number> get_nf0 (dealii::Vector<Number> n13);
+  dealii::Vector<Number> get_VxcLDA (dealii::Vector<Number> n13);
 
-}
+} // namespace xc
 
 #endif // XC_HEADER
 // vim: ts=2 sts=2 sw=2

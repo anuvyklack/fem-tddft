@@ -1,12 +1,9 @@
 #include "model.hpp"
-#include <magic_enum.hpp>
-#include "stationary_schrodinger.hpp"
-#include "hartree.hpp"
-#include "time_dependent.hpp"
 
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/fe/fe_tools.h>
 #include <deal.II/numerics/data_out.h>
+#include <magic_enum.hpp>
 #include <boost/algorithm/cxx11/any_of.hpp>
 
 using namespace dealii;
@@ -125,29 +122,42 @@ void Model<dim>::Parameters::parse_parameters (ParameterHandler & prm)
 
 
 template<int dim>
-//Model<dim>::Model()
 Model<dim>::Model (Parameters & parameters)
-  : parameters(parameters)
+  : parameters(parameters),
+    out(cout, output_file)
 {
   AssertThrow(parameters.initialized, ExcNotInitialized())
+
+  // Create the results folder.
+  results_path = fs::current_path() / parameters.results_folder;
+  fs::create_directory(results_path);
+
+  // Open output file stream.
+  output_file.open(results_path / "output.txt");
 
   set_mesh();
   fe_ptr = FETools::get_fe_by_name<dim>( parameters.fe_name );
 
-  cout << "Global mesh refinement steps: "
-       << std::to_string( parameters.global_mesh_refinement_steps ) << endl
-       << endl;
+  out << "Global mesh refinement steps: "
+      << std::to_string( parameters.global_mesh_refinement_steps ) << endl
+      << endl;
   mesh.refine_global( parameters.global_mesh_refinement_steps );
 
   dof_handler.distribute_dofs(*fe_ptr);
 
-  // Create the folder for resulrs.
-  results_path = fs::current_path() / parameters.results_folder;
-  fs::create_directory(results_path);
-
-  // Setup the logging.
+  // Setup logging.
+  log_file.open(results_path / "log");
   deallog.attach(log_file);
   deallog.depth_file( parameters.verbosity_level );
+}
+
+
+
+template<int dim>
+Model<dim>::~Model()
+{
+  output_file.close();
+  log_file.close();
 }
 
 
@@ -248,10 +258,10 @@ void Model<dim>::output_mesh() const
 // }
 
 
-/*--------------- Explicit templates instantiation --------------------------*/
+/*------------------ Explicit templates instantiation -------------------*/
 
 template class Model<1>;
 template class Model<2>;
 template class Model<3>;
 
-// vim: ts=2 sts=2 sw=2 fdm=marker
+// vim: ts=2 sts=2 sw=2 fdc=2

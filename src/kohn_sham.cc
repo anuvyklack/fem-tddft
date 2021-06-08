@@ -1,6 +1,5 @@
 #include "kohn_sham.hpp"
 #include "model.hpp"
-#include "dft.hpp"
 
 // #include <deal.II/base/function_parser.h>
 #include <deal.II/dofs/dof_tools.h>
@@ -269,25 +268,19 @@ KohnSham<dim>::run()
 {
   setup_system();
   assemble_system();
+  solve();
 
-  const unsigned int n_iterations = solve();
-  cout << "   Solver converged in " << n_iterations << " iterations."
-       << endl;
-
-  cout << endl;
-  for (unsigned int i = 0; i < eigenvalues.size(); ++i)
-    cout << "      Eigenvalue " << i << " : " << eigenvalues[i] << endl;
-  cout << endl;
-
+  //const unsigned int n_iterations = solve();
+  // cout << "   Solver converged in " << n_iterations << " iterations."
+  //      << endl;
 
   return KohnShamOrbitals {eigenvalues, get_wavefunctions(),
-                           std::pair(min_spurious_eigenvalue, max_spurious_eigenvalue)};
-
+      std::array{min_spurious_eigenvalue, max_spurious_eigenvalue} };
 }
 
 
 
-/*--------------- Explicit templates instantiation --------------------------*/
+/*------------------ Explicit templates instantiation -------------------*/
 
 template class KohnSham<1>;
 template class KohnSham<2>;

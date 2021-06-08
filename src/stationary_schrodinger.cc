@@ -275,7 +275,8 @@ void EigenvalueProblem<dim>::run()
 
 
 
-// Explicit template instantiation
+/*------------------ Explicit templates instantiation -------------------*/
+
 template class EigenvalueProblem<1>;
 template class EigenvalueProblem<2>;
 template class EigenvalueProblem<3>;

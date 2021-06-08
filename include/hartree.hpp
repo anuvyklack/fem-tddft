@@ -16,9 +16,7 @@ template <int dim>
 class Hartree : public BaseProblem
 {
 public:
-  Hartree (Model<dim> & model,
-           const DFT_Parameters & parameters,
-           dealii::Vector<double> & density);
+  Hartree (Model<dim> & model, dealii::Vector<double> & density);
 
   dealii::Vector<double> run();
 
@@ -28,7 +26,6 @@ public:
   void solve();
 
   Model<dim> & model;
-  const DFT_Parameters & parameters;
 
   dealii::Triangulation<dim> & mesh;
   const dealii::FiniteElement<dim> & model_fe;

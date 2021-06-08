@@ -25,6 +25,6 @@ void exit_if_mpi (char** &argv)  // std::string name_of_executable
 }
 
 
-/*--------------- Explicit templates instantiation --------------------------*/
+/*------------------ Explicit templates instantiation -------------------*/
 
 // vim: ts=2 sts=2 sw=2

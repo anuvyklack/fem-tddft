@@ -23,19 +23,15 @@ namespace fs = std::filesystem;
 
 
 template <int dim>
-Hartree<dim>::Hartree (Model<dim> & model,
-                       const DFT_Parameters & parameters,
-                       dealii::Vector<double> & density)
-
+Hartree<dim>::Hartree (Model<dim> & model, dealii::Vector<double> & density)
   : model(model),
-    parameters(parameters),
     mesh(model.mesh),
     model_fe(model.get_fe()),
     dof_handler(mesh),
     density(density)
 {
-  // Make local finite element object be the same type as in model,
-  // but of the 2 time higher order.
+  // Make local finite element object be the same type as in 'model',
+  // but of the 2 time higher polinomial order.
   fe = FETools::get_fe_by_name<dim>(
            model.parameters.fe_type +
            "(" +  std::to_string(model.parameters.fe_order * 2) + ")"
@@ -58,7 +54,7 @@ void Hartree<dim>::setup_system()
   solution.reinit(dof_handler.n_dofs());
   system_rhs.reinit(dof_handler.n_dofs());
 
-  // Dirichlet boundary conditions
+  // Dirichlet boundary conditions.
   DoFTools::make_zero_boundary_constraints(dof_handler, constraints);
   constraints.close();
 }
@@ -100,6 +96,8 @@ void Hartree<dim>::solve()
   // SolverCG<Vector<double>> solver(solver_control);
   // solver.solve(system_matrix, solution, system_rhs, PreconditionIdentity());
 
+  // Direct solver:
+  // --------------
   SparseDirectUMFPACK direct_solver;
   direct_solver.solve(system_matrix, system_rhs);
   solution = system_rhs;
@@ -117,7 +115,6 @@ Hartree<dim>::run()
   assemble_system();
   solve();
 
-
   // We don't need 'system_rhs' vector any more, so to not allocate memory for
   // a temporary vector,  we use 'system_rhs' vector as temporary storage during
   // interpolation 'solution' vector back to 'model.dof_handler':
@@ -133,7 +130,7 @@ Hartree<dim>::run()
 
 
 
-/*--------------- Explicit templates instantiation ----------------------*/
+/*------------------ Explicit templates instantiation -------------------*/
 
 template class Hartree<1>;
 template class Hartree<2>;
