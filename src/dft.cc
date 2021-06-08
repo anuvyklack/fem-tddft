@@ -1,10 +1,12 @@
 #include "dft.hpp"
 #include "hartree.hpp"
+#include "xc.hpp"
 #include "utilities.hpp"
 
 #include <deal.II/lac/solver_control.h>
 // #include <deal.II/numerics/time_dependent.h>
 #include <iostream>
+#include <cmath>
 
 using namespace dealii;
 using std::cin, std::cout, std::endl;
@@ -17,6 +19,11 @@ DFT_Parameters::DFT_Parameters()
       number_of_electrons,
       "How many electrons (i.e. the number of eigenvalues/eigenfunctions) "
       "to be computed.");
+  add_parameter(
+      "Maximum DFT convergence steps",
+      max_convergence_steps,
+      "The maximum number of iterations the solver is allowed to do trying "
+      "to achieve the solution convergence.");
 
   parse_parameters_call_back.connect( [&](){initialized = true;} );
 }
@@ -59,7 +66,7 @@ void DFT<dim>::run()
 {
   out << "=============================================" << std::endl;
 
-  SolverControl solver_control(100, 1e-9);
+  SolverControl solver_control(parameters.max_convergence_steps, 1e-9);
 
   dealii::Vector<double> delta;
   delta.reinit(hartree_potential);
@@ -76,13 +83,16 @@ void DFT<dim>::run()
       ++iteration;
 
       out << endl
-           << "Iteration " << iteration << ':' << endl
-           << "   Number of active cells:       " << n_cells << endl
-           << "   Number of degrees of freedom: " << n_dofs  << endl;
+          << "Iteration " << iteration << ':' << endl
+          << "   Number of active cells:       " << n_cells << endl
+          << "   Number of degrees of freedom: " << n_dofs  << endl;
 
       delta = hartree_potential;
 
+      out << "   Solving Kohn-Sham equation." << endl;
       solve_Kohn_Sham_problem();
+
+      out << "   Solving Poisson's equation." << endl;
       solve_Hartree_problem();
 
       delta -= hartree_potential;
@@ -153,8 +163,9 @@ void DFT<dim>::run()
 template <int dim>
 void DFT<dim>::solve_Kohn_Sham_problem()
 {
+  temp = get_hartree_plus_xc_potential();
   typename KohnSham<dim>::Parameters ksprm {parameters.number_of_electrons};
-  KohnSham<dim> ks (model, ksprm, hartree_potential, external_potential);
+  KohnSham<dim> ks (model, ksprm, temp, external_potential);
 
   kohn_sham_orbitals = ks.run();
   // data.density = get_density();
@@ -192,6 +203,23 @@ DFT<dim>::get_density() const
 
   return density;
 }
+
+
+
+template <int dim>
+dealii::Vector<double>
+DFT<dim>::get_hartree_plus_xc_potential()
+{
+  unsigned int n_dofs = model.dof_handler.n_dofs();
+
+  // Calculate the qubic root of the density.
+  temp.reinit(density);
+  for (unsigned int i = 0; i < n_dofs; ++i)
+    temp[i] = cbrt(density[i]);
+
+  return xc::get_VxcLDA(temp);
+}
+
 
 
 /*------------------ Explicit templates instantiation -------------------*/

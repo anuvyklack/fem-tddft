@@ -11,13 +11,13 @@ namespace xc {
   /**
    * @brief LDA exchange-correlation potential.
    *
-   * @note The cubic root of the electron density @p cr=pow(rho,1/3.) 
+   * @note The cubic root of the electron density @p cr=pow(rho,1/3.)
    * is passed as an argument due to performance considerations.
    *
    * @param n13 Qubit root of electron density, @p n^{1/3}
    */
   template <class Number>
-  dealii::Vector<Number> get_VxcLDA (dealii::Vector<Number> n13);
+  dealii::Vector<Number> get_VxcLDA (const dealii::Vector<Number> n13);
 
 } // namespace xc
 

@@ -25,6 +25,7 @@ public:
   }
 
   unsigned int number_of_electrons = 2;
+  unsigned int max_convergence_steps = 100;
 
   bool initialized = false;
 
@@ -69,8 +70,7 @@ public:
 
   dealii::Vector<double> get_density() const;
 
-  /// Return full potential energy.
-  dealii::Vector<double> get_potential() const;
+  dealii::Vector<double> get_hartree_plus_xc_potential();
 
   Model<dim> & model;
   const DFT_Parameters & parameters;
@@ -78,14 +78,14 @@ public:
 
   double_ostream & out;
 
+  dealii::ConvergenceTable convergence_table;
+
   /**
    * Auxiliary vector for some additioanl calculations.
    * We create it here to avoid creation and consequently memory allocation
    * (which is time-consuming) on each iteration when we need it.
    */
-  dealii::Vector<double>  temp;
-
-  dealii::ConvergenceTable convergence_table;
+  dealii::Vector<double> temp;
 };
 
 

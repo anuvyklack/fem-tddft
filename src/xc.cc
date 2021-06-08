@@ -11,10 +11,10 @@ const double B2 = 20.4562557 *  cbrt(16. * M_PI * M_PI / 9.);
 
 // LDA xc potential
 template <class Number>
-Vector<Number> get_VxcLDA (Vector<Number> n13) 
+Vector<Number> xc::get_VxcLDA (const Vector<Number> n13)
 {
   Vector<Number> result (n13.size());
-  for (unsigned int m = 0; m < n13.size(); ++m) 
+  for (unsigned int m = 0; m < n13.size(); ++m)
     {
       // exchange
       double cr1 = n13[m]; // cubic root
@@ -31,6 +31,6 @@ Vector<Number> get_VxcLDA (Vector<Number> n13)
 
 /*------------------ Explicit templates instantiation -------------------*/
 
-template Vector<double> get_VxcLDA (Vector<double>);
+template Vector<double> xc::get_VxcLDA (Vector<double>);
 
 // vim: ts=2 sts=2 sw=2

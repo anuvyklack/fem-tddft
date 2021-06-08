@@ -226,7 +226,7 @@ unsigned int KohnSham<dim>::solve()
                     eigenfunctions.size());
 
   for (unsigned int i = 0; i < eigenfunctions.size(); ++i)
-    eigenfunctions[i] /= eigenfunctions[i].linfty_norm();
+    eigenfunctions[i] /= eigenfunctions[i].l2_norm();
 
   // Return the number of iterations it took to converge
   return solver_control.last_step();

@@ -31,12 +31,14 @@ int main(int argc, char** argv)
 {
 try
   {
-    const unsigned int dim {1};
+    const unsigned int dim {3};
 
     // Check if this app is runnint in parellel with "mpirun".
     // Exit with error if true.
     dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
     exit_if_mpi(argv);
+
+    cout << "Executing " << dim << "D calculation." << endl;
 
     parse_parameters<dim>(argc, argv);
 
