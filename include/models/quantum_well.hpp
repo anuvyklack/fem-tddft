@@ -13,15 +13,12 @@ template <int dim>
 class QuantumWell : public Model<dim>
 {
 public:
-  /// The Meyers Singleton.
   class Parameters : public dealii::ParameterAcceptor
   {
   public:
-    static Parameters & get_parameters()
-    {
-      static QuantumWell<dim>::Parameters prm;
-      return prm;
-    }
+    Parameters(); /* Constructor should be private! */
+    Parameters (const Parameters& other) = delete;
+    Parameters& operator=(const Parameters&) = delete;
 
     double width = 400;    ///< The width of the well.
 
@@ -41,10 +38,6 @@ public:
     bool initialized = false;
 
   private:
-    Parameters(); /* Constructor should be private! */
-    Parameters (const Parameters& other) = delete;
-    Parameters& operator=(const Parameters&) = delete;
-
     virtual void parse_parameters (dealii::ParameterHandler & prm) override;
   };
 

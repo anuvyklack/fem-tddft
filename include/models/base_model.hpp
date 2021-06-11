@@ -40,15 +40,12 @@ template <int dim>
 class Model
 {
 public:
-  /// The Meyers Singleton.
   class Parameters : public dealii::ParameterAcceptor
   {
   public:
-    static Parameters & get_parameters()
-    {
-      static Model<dim>::Parameters prm;
-      return prm;
-    }
+    Parameters(); /* Constructor should be private! */
+    Parameters (const Parameters& other) = delete;
+    Parameters& operator=(const Parameters&) = delete;
 
     // /**
     //  * If @p true then @link which_mesh_to_use @endlink attribute stores
@@ -78,10 +75,6 @@ public:
     bool initialized = false;
 
   private:
-    Parameters(); /* Constructor should be private! */
-    Parameters (const Parameters& other) = delete;
-    Parameters& operator=(const Parameters&) = delete;
-
     virtual void parse_parameters (dealii::ParameterHandler & prm) override;
   };
 

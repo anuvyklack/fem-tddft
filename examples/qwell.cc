@@ -36,19 +36,18 @@ try
     cout << "Executing " << dim << "D calculation." << endl;
 
     // Declare parameters.
-          Model<dim>::Parameters::get_parameters();
-    QuantumWell<dim>::Parameters::get_parameters();
-            DFT<dim>::Parameters::get_parameters();
+          Model<dim>::Parameters model_parameters;
+    QuantumWell<dim>::Parameters qwell_parameters;
+            DFT<dim>::Parameters dft_parameters;
 
     parse_parameters<dim>(argc, argv);
 
-    QuantumWell<dim> qwell {Model<dim>::Parameters::get_parameters(),
-                            QuantumWell<dim>::Parameters::get_parameters()};
+    QuantumWell<dim> qwell {model_parameters, qwell_parameters};
 
-    // DFT<dim> dft {qwell, DFT_Parameters::get_parameters(),
+    // DFT<dim> dft {qwell, dft_parameters,
     //               nullptr, &qwell.parameters.seed_density};
 
-    DFT<dim> dft {qwell, DFT<dim>::Parameters::get_parameters()};
+    DFT<dim> dft {qwell, dft_parameters};
 
     dft.run();
 

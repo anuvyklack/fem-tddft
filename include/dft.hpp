@@ -27,27 +27,18 @@ class DFT : public BaseProblem
 public:
   /**
    * @brief The parameters for DFT calculation.
-   *
-   * The Meyers Singleton.
    */
   class Parameters : public dealii::ParameterAcceptor
   {
   public:
-    static Parameters & get_parameters()
-    {
-      static Parameters prm;
-      return prm;
-    }
+    Parameters();
+    Parameters (const Parameters& other) = delete;
+    Parameters& operator= (const Parameters&) = delete;
   
     unsigned int number_of_electrons = 2;
     unsigned int max_convergence_steps = 100;
   
     bool initialized = false;
-  
-  private:
-    Parameters();
-    Parameters (const Parameters& other) = delete;
-    Parameters& operator= (const Parameters&) = delete;
   };
 
 
