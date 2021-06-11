@@ -1,9 +1,7 @@
-#ifndef DOUBLE_OUTPUT_STREAM_HPP
-#define DOUBLE_OUTPUT_STREAM_HPP
-
+#ifndef DOUBLE_OUTPUT_STREAM_HEADER
+#define DOUBLE_OUTPUT_STREAM_HEADER
 
 #include <iostream>
-
 
 struct double_ostream
 {
@@ -16,6 +14,7 @@ struct double_ostream
 };
 
 
+
 /// General '<<' operator suitable for most data types.
 template <typename T>
 double_ostream& operator<<(double_ostream& os, T const& t)
@@ -24,6 +23,7 @@ double_ostream& operator<<(double_ostream& os, T const& t)
    os.out2 << t;
    return os;
 }
+
 
 
 /// Allow for 'std::endl' to be used with a 'OutputStream'.
@@ -36,6 +36,6 @@ inline double_ostream& operator<<(double_ostream& os,
 }
 
 
-#endif // DOUBLE_OUTPUT_STREAM_HPP
+#endif // DOUBLE_OUTPUT_STREAM_HEADER
 // vim: ts=2 sts=2 sw=2
 

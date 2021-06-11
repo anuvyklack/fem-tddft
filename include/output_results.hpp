@@ -1,7 +1,7 @@
 #ifndef OUTPUT_RESULTS_HEADER
 #define OUTPUT_RESULTS_HEADER
 
-#include "model.hpp"
+#include "models/base_model.hpp"
 #include <deal.II/numerics/data_out.h>
 #include <magic_enum.hpp>
 #include <iostream>

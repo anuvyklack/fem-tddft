@@ -1,7 +1,7 @@
 #ifndef KOHN_SHAM_HEADER
 #define KOHN_SHAM_HEADER
 
-#include "model.hpp"
+#include "models/base_model.hpp"
 
 #include <deal.II/grid/tria.h>
 #include <deal.II/dofs/dof_handler.h>

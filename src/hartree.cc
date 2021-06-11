@@ -1,5 +1,5 @@
 #include "hartree.hpp"
-#include "model.hpp"
+#include "models/base_model.hpp"
 
 #include <deal.II/fe/fe_tools.h>
 #include <deal.II/dofs/dof_tools.h>

@@ -1,5 +1,5 @@
 #include "output_results.hpp"
-#include "model.hpp"
+#include "models/base_model.hpp"
 
 #include <deal.II/numerics/data_out.h>
 #include <magic_enum.hpp>

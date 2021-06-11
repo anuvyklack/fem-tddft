@@ -1,8 +1,6 @@
 #ifndef PARAMETERS_PARSING_HEADER
 #define PARAMETERS_PARSING_HEADER
 
-#include "model.hpp"
-// #include "dft.hpp"
 #include <boost/program_options.hpp>
 #include <deal.II/base/parameter_handler.h>
 

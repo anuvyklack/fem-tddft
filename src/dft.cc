@@ -4,6 +4,7 @@
 #include "utilities.hpp"
 
 #include <deal.II/lac/solver_control.h>
+#include <deal.II/numerics/vector_tools.h>
 // #include <deal.II/numerics/time_dependent.h>
 #include <iostream>
 #include <cmath>
@@ -11,7 +12,9 @@
 using namespace dealii;
 using std::cin, std::cout, std::endl;
 
-DFT_Parameters::DFT_Parameters()
+
+template <int dim>
+DFT<dim>::Parameters::Parameters()
   : ParameterAcceptor("/DFT")
 {
   add_parameter(
@@ -29,34 +32,43 @@ DFT_Parameters::DFT_Parameters()
 }
 
 
-template <int dim>
-DFT<dim>::DFT (Model<dim> & model, DFT_Parameters & prm)
-  : model(model), parameters(prm), out(model.out)
-{
-  AssertThrow(prm.initialized, ExcNotInitialized())
 
-  // Set hartree potential and density vector sizes.
-  // And set there initial values to 0.
-  hartree_potential.reinit( model.dof_handler.n_dofs() );
-  density.reinit( model.dof_handler.n_dofs());
-}
+template <int dim>
+DFT<dim>::DFT (Model<dim> & model, Parameters & prm)
+  : DFT(model, prm, nullptr, nullptr)
+{}
 
 
 
 template <int dim>
-DFT<dim>::DFT (Model<dim> & model, DFT_Parameters & prm,
-               const dealii::Function<dim> & external_potential)
+DFT<dim>::DFT (Model<dim> & model, Parameters & prm,
+               const dealii::Function<dim> &external_potential)
+  : DFT(model, prm, &external_potential, nullptr)
+{}
+
+
+
+template <int dim>
+DFT<dim>::DFT (Model<dim> & model, Parameters & prm,
+               const Function<dim> *external_potential,
+               const Function<dim> *seed_density)
   : model(model),
     parameters(prm),
-    external_potential(&external_potential),
+    external_potential(external_potential),
     out(model.out)
 {
   AssertThrow(prm.initialized, ExcNotInitialized())
 
-  // Set hartree potential and density vectors sizes,
-  // and set there initial values to 0.
+  // Set hartree potential and density vectors size,
+  // and set their initial values to 0.
   hartree_potential.reinit( model.dof_handler.n_dofs() );
-  density.reinit( model.dof_handler.n_dofs());
+  density.reinit( model.dof_handler.n_dofs() );
+
+  if (seed_density)
+    {
+      use_seed_density = true;
+      VectorTools::interpolate(model.dof_handler, *seed_density, density);
+    }
 }
 
 
@@ -64,7 +76,7 @@ DFT<dim>::DFT (Model<dim> & model, DFT_Parameters & prm,
 template <int dim>
 void DFT<dim>::run()
 {
-  out << "=============================================" << std::endl;
+  out << "=============================================" << endl;
 
   SolverControl solver_control(parameters.max_convergence_steps, 1e-9);
 
@@ -77,6 +89,18 @@ void DFT<dim>::run()
   double L2_error, Linfty_error;
 
   unsigned int iteration = 0; // the number of iteration
+
+  if (use_seed_density)
+    {
+      out << endl
+          << "Iteration " << iteration << ':' << endl
+          << "   Use initial density." << endl
+          << "   Solving Poisson's equation." << endl;
+
+      Hartree<dim> hartree {model, density};
+      hartree_potential = hartree.run();
+    }
+
   SolverControl::State solver_state = SolverControl::iterate;
   while (solver_state == SolverControl::iterate)
     {
@@ -133,7 +157,7 @@ void DFT<dim>::run()
   convergence_table.set_tex_format("dofs", "r");
 
   convergence_table.evaluate_convergence_rates("L2", ConvergenceTable::reduction_rate);
-  convergence_table.evaluate_convergence_rates("L2", ConvergenceTable::reduction_rate_log2);
+  // convergence_table.evaluate_convergence_rates("L2", ConvergenceTable::reduction_rate_log2);
 
   // convergence_table.evaluate_convergence_rates("Linfty", ConvergenceTable::reduction_rate);
   // convergence_table.evaluate_convergence_rates("Linfty", ConvergenceTable::reduction_rate_log2);
@@ -180,7 +204,7 @@ void DFT<dim>::solve_Hartree_problem()
   temp.reinit(density);
   temp = density;
   density = get_density();
-  temp = mixer(density, temp, 0.5);
+  temp = mixer(density, temp, 0.1);
 
   Hartree<dim> hartree {model, temp};
   hartree_potential = hartree.run();
@@ -217,7 +241,9 @@ DFT<dim>::get_hartree_plus_xc_potential()
   for (unsigned int i = 0; i < n_dofs; ++i)
     temp[i] = cbrt(density[i]);
 
-  return xc::get_VxcLDA(temp);
+  temp = xc::get_VxcLDA(temp);
+  temp += hartree_potential;
+  return temp;
 }
 
 

@@ -1,11 +1,11 @@
+#include "models/quantum_well.hpp"
 #include "utilities.hpp"
 #include "parameters_parsing.hpp"
 #include "output_results.hpp"
 // #include "output_results_2.hpp"
-#include "model.hpp"
 #include "dft.hpp"
-#include "kohn_sham.hpp"
-#include "hartree.hpp"
+// #include "kohn_sham.hpp"
+// #include "hartree.hpp"
 // #include "time_dependent.hpp"
 #include "external_potentials.hpp"
 
@@ -20,50 +20,55 @@
 
 // using namespace dealii;
 using std::cin, std::cout, std::endl;
-namespace fs = std::filesystem;
-namespace po = boost::program_options;
-
-// template<int dim>
-// typename Model<dim>::Parameters model_parameters;
 
 // int main(int argc, char *argv[])
 int main(int argc, char** argv)
 {
 try
   {
-    const unsigned int dim {3};
+    const unsigned int dim {1};
 
-    // Check if this app is runnint in parellel with "mpirun".
+    // Check if this app is running in parellel with "mpirun".
     // Exit with error if true.
     dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
     exit_if_mpi(argv);
 
     cout << "Executing " << dim << "D calculation." << endl;
 
+    // Declare parameters.
+          Model<dim>::Parameters::get_parameters();
+    QuantumWell<dim>::Parameters::get_parameters();
+            DFT<dim>::Parameters::get_parameters();
+
     parse_parameters<dim>(argc, argv);
 
-    Model<dim>::Parameters & model_parameters =
-                             Model<dim>::Parameters::get_parameters();
-    Model<dim> model {model_parameters};
+    QuantumWell<dim> qwell {Model<dim>::Parameters::get_parameters(),
+                            QuantumWell<dim>::Parameters::get_parameters()};
 
-    DFT_Parameters & dft_parameters = DFT_Parameters::get_parameters();
+    // DFT<dim> dft {qwell, DFT_Parameters::get_parameters(),
+    //               nullptr, &qwell.parameters.seed_density};
+
+    DFT<dim> dft {qwell, DFT<dim>::Parameters::get_parameters()};
+
+    dft.run();
+
     // PointCharge<dim> potential {1, dealii::Point<dim>()};
 
     // DFT<dim> dft {model, dft_parameters, potential};
-    DFT<dim> dft {model, dft_parameters};
-    dft.run();
+    // DFT<dim> dft {model, dft_parameters};
+    // dft.run();
 
 
-    ResultsOutput<dim> data_out {model};
-    data_out.add_data_vector(dft.kohn_sham_orbitals.wavefunctions, "Kohn_Sham_orbital");
-    data_out.add_data_vector(dft.density, "density");
-    data_out.add_data_vector(dft.hartree_potential, "hartree_potential");
-
-    // dealii::Vector<double> fe_potential (model.dof_handler.n_dofs());
-    // dealii::VectorTools::interpolate( model.dof_handler, potential, fe_potential );
-    // data_out.add_data_vector(fe_potential, "point_charge");
-
-    data_out.write("dft_results");
+    // ResultsOutput<dim> data_out {model};
+    // data_out.add_data_vector(dft.kohn_sham_orbitals.wavefunctions, "Kohn_Sham_orbital");
+    // data_out.add_data_vector(dft.density, "density");
+    // data_out.add_data_vector(dft.hartree_potential, "hartree_potential");
+    //
+    // // dealii::Vector<double> fe_potential (model.dof_handler.n_dofs());
+    // // dealii::VectorTools::interpolate( model.dof_handler, potential, fe_potential );
+    // // data_out.add_data_vector(fe_potential, "point_charge");
+    //
+    // data_out.write("dft_results");
 
     // boost::regex_replace(str, boost::regex("[' ']{2,}"), " ");
   }
@@ -96,6 +101,5 @@ catch (...)
   cout << endl << "Job done." << endl;
   return 0;
 }
-
 
 // vim: ts=2 sts=2 sw=2

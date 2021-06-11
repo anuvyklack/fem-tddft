@@ -1,7 +1,7 @@
 #ifndef UTILITIES_HEADER
 #define UTILITIES_HEADER
 
-#include "model.hpp"
+#include <deal.II/fe/mapping_q1_eulerian.h>
 #include <magic_enum.hpp>
 
 /// @brief Check if this app is running in parellel with "mpirun".

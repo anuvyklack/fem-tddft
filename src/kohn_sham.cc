@@ -1,5 +1,5 @@
 #include "kohn_sham.hpp"
-#include "model.hpp"
+#include "models/base_model.hpp"
 
 // #include <deal.II/base/function_parser.h>
 #include <deal.II/dofs/dof_tools.h>
@@ -14,22 +14,6 @@
 using namespace dealii;
 using std::cin, std::cout, std::endl;
 namespace fs = std::filesystem;
-
-
-
-template <int dim>
-KohnSham<dim>::KohnSham (Model<dim> & model,
-                         const Parameters & parameters,
-                         const dealii::Vector<double> & fe_potential,
-                         const dealii::Function<dim> & fun_potential)
-  : model(model),
-    parameters(parameters),
-    fe_potential(&fe_potential),
-    fun_potential(&fun_potential),
-    mesh(model.mesh),
-    fe(model.get_fe()),
-    dof_handler(model.dof_handler)
-{}
 
 
 
@@ -53,13 +37,17 @@ template <int dim>
 KohnSham<dim>::KohnSham (Model<dim> & model,
                          const Parameters & parameters,
                          const dealii::Vector<double> & fe_potential)
-  : model(model),
-    parameters(parameters),
-    fe_potential(&fe_potential),
-    fun_potential(nullptr),
-    mesh(model.mesh),
-    fe(model.get_fe()),
-    dof_handler(model.dof_handler)
+  : KohnSham(model, parameters, fe_potential, nullptr)
+{}
+
+
+
+template <int dim>
+KohnSham<dim>::KohnSham (Model<dim> & model,
+                         const Parameters & parameters,
+                         const dealii::Vector<double> & fe_potential,
+                         const dealii::Function<dim> & fun_potential)
+  : KohnSham(model, parameters, fe_potential, &fun_potential)
 {}
 
 

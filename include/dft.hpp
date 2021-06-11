@@ -1,7 +1,7 @@
 #ifndef DFT_HEADER
 #define DFT_HEADER
 
-#include "model.hpp"
+#include "models/base_model.hpp"
 #include "double_output_stream.hpp"
 #include "kohn_sham.hpp"
 // #include "hartree.hpp"
@@ -9,33 +9,6 @@
 #include <deal.II/base/parameter_acceptor.h>
 #include <deal.II/base/function.h>
 #include <deal.II/base/convergence_table.h>
-
-/**
- * @brief The parameters for DFT calculation.
- *
- * The Meyers Singleton.
- */
-class DFT_Parameters : public dealii::ParameterAcceptor
-{
-public:
-  static DFT_Parameters & get_parameters()
-  {
-    static DFT_Parameters prm;
-    return prm;
-  }
-
-  unsigned int number_of_electrons = 2;
-  unsigned int max_convergence_steps = 100;
-
-  bool initialized = false;
-
-private:
-  DFT_Parameters();
-  DFT_Parameters (const DFT_Parameters& other) = delete;
-  DFT_Parameters& operator= (const DFT_Parameters&) = delete;
-};
-
-
 
 // template <int dim>
 // struct DFT_Data
@@ -52,10 +25,40 @@ template <int dim>
 class DFT : public BaseProblem
 {
 public:
-  DFT (Model<dim> & model, DFT_Parameters & parameters);
+  /**
+   * @brief The parameters for DFT calculation.
+   *
+   * The Meyers Singleton.
+   */
+  class Parameters : public dealii::ParameterAcceptor
+  {
+  public:
+    static Parameters & get_parameters()
+    {
+      static Parameters prm;
+      return prm;
+    }
+  
+    unsigned int number_of_electrons = 2;
+    unsigned int max_convergence_steps = 100;
+  
+    bool initialized = false;
+  
+  private:
+    Parameters();
+    Parameters (const Parameters& other) = delete;
+    Parameters& operator= (const Parameters&) = delete;
+  };
 
-  DFT (Model<dim> & model, DFT_Parameters & prm,
+
+  DFT (Model<dim> & model, Parameters & parameters);
+
+  DFT (Model<dim> & model, Parameters & prm,
        const dealii::Function<dim> & external_potential);
+
+  DFT (Model<dim> & model, Parameters & prm,
+       const dealii::Function<dim> *external_potential,
+       const dealii::Function<dim> *seed_density);
 
   void run();
 
@@ -73,8 +76,9 @@ public:
   dealii::Vector<double> get_hartree_plus_xc_potential();
 
   Model<dim> & model;
-  const DFT_Parameters & parameters;
-  const dealii::Function<dim>* external_potential {nullptr};
+  const Parameters & parameters;
+  const dealii::Function<dim> * external_potential {nullptr};
+  bool use_seed_density = false;
 
   double_ostream & out;
 

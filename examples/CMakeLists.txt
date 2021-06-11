@@ -1,9 +1,8 @@
-# PROJECT(schrodinger VERSION 0.0.3)
-PROJECT(fem-tddft)
+PROJECT(fem-tddft-examples)
 
-SET(TARGET femdft)
+SET(TARGET qwell)
 
-# SET(DEAL_II_DIR ~/software/dealii-9.2.0/build)
+SET(DEAL_II_DIR ~/software/dealii-9.2.0/build)
 
 
 # Usually, you will not need to modify anything beyond this point...
@@ -55,52 +54,22 @@ set(Boost_USE_STATIC_LIBS ON)
 # -------------
 # file(GLOB SOURCE_FILES "${PROJECT_SOURCE_DIR}/src/*.cc")
 set(SOURCE_FILES
-      "models/base_model.cc"
-      "models/quantum_well.cc"
-      "utilities.cc"
-      "parameters_parsing.cc"
-      "output_results.cc"
-      # "stationary_schrodinger.cc"
-      "kohn_sham.cc"
-      "hartree.cc"
-      "dft.cc"
-      "xc.cc"
-      # "time_dependent.cc"
-      "external_potentials.cc"
+      "qwell.cc"
    )
-# Add prefix to all items in list.
-list(TRANSFORM SOURCE_FILES PREPEND "src/")
-
-# add_executable(${TARGET} ${SOURCE_FILES})
-add_library(${TARGET} ${SOURCE_FILES})
-target_link_libraries(${TARGET} ${Boost_LIBRARIES})
+add_executable(${TARGET} ${SOURCE_FILES})
+# add_library(${TARGET} ${SOURCE_FILES})
+target_link_libraries(
+    ${TARGET}
+    ${Boost_LIBRARIES}
+    "${PROJECT_SOURCE_DIR}/../build-Debug/libfemdft.a"
+  )
 target_include_directories(
     ${TARGET} PUBLIC
-    "${PROJECT_SOURCE_DIR}/include"
-    "${PROJECT_SOURCE_DIR}/bundled/magic_enum"
+    "${PROJECT_SOURCE_DIR}/../include"
+    "${PROJECT_SOURCE_DIR}/../bundled/magic_enum"
   )
 
-# set_target_properties(${TARGET} PROPERTIES
-#     CXX_STANDARD 17
-#     CXX_STANDARD_REQUIRED YES
-#     CXX_EXTENSIONS NO
-# )
-
 DEAL_II_SETUP_TARGET(${TARGET})
-
-
-# # Test target
-# # -----------------
-# set(TEST_SOURCE_FILES "src/test.cc"
-#                       "src/general.cc"
-#                       "src/model.cc"
-#                       "src/ground_state.cc"
-#    )
-# add_executable(test ${TEST_SOURCE_FILES})
-# target_link_libraries(test ${Boost_LIBRARIES})
-# target_include_directories(test PUBLIC
-#                            "${PROJECT_SOURCE_DIR}/include")
-# DEAL_II_SETUP_TARGET(test)
 
 
 # vim: ts=2 sts=2 sw=2

@@ -1,5 +1,5 @@
 #include "stationary_schrodinger.hpp"
-#include "model.hpp"
+#include "models/base_model.hpp"
 
 #include <deal.II/base/function_parser.h>
 #include <deal.II/dofs/dof_tools.h>

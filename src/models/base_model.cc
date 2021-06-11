@@ -1,4 +1,4 @@
-#include "model.hpp"
+#include "models/base_model.hpp"
 
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/fe/fe_tools.h>
@@ -19,36 +19,36 @@ Model<dim>::Parameters::Parameters()
   add_parameter(
       "Results folder",
       results_folder,
-      "The folder to store results to."
+      "The folder to store results to. "
       "If set to 'auto' the results folder name will be created atomaticaly "
       "from mesh name.");
 
-  // declare Mesh parameter
-  enter_my_subsection(prm);
-  {
-    // TODO: with C++20 this string can be 'constexpr'.
-    std::string description =
-        std::string { "Mesh to use. Should be path to mesh file or "
-                      "one of built-in meshes names.\n"
-                      "Built-in meshes:\n" }
-        +
-        []()->std::string
-        {
-          std::string result;
-          // Cycle through 'std::array' with enum values
-          // converted to 'std::view_string'.
-          for (const auto& mesh_type : magic_enum::enum_names<BuiltinMesh>())
-            result += "\t- " + static_cast<std::string>(mesh_type) + "\n";
-          return result;
-        }();
-
-    prm.declare_entry(
-        "Mesh",
-        "quantum_well",
-        dealii::Patterns::Anything(),
-        description);
-  }
-  leave_my_subsection(prm);
+  // // declare Mesh parameter
+  // enter_my_subsection(prm);
+  // {
+  //   // TODO: with C++20 this string can be 'constexpr'.
+  //   std::string description =
+  //       std::string { "Mesh to use. Should be path to mesh file or "
+  //                     "one of built-in meshes names.\n"
+  //                     "Built-in meshes:\n" }
+  //       +
+  //       []()->std::string
+  //       {
+  //         std::string result;
+  //         // Cycle through 'std::array' with enum values
+  //         // converted to 'std::view_string'.
+  //         for (const auto& mesh_type : magic_enum::enum_names<BuiltinMesh>())
+  //           result += "\t- " + static_cast<std::string>(mesh_type) + "\n";
+  //         return result;
+  //       }();
+  //
+  //   prm.declare_entry(
+  //       "Mesh",
+  //       "quantum_well",
+  //       dealii::Patterns::Anything(),
+  //       description);
+  // }
+  // leave_my_subsection(prm);
 
   add_parameter(
       "Finite element space",
@@ -75,7 +75,6 @@ Model<dim>::Parameters::Parameters()
   // );
 
   parse_parameters_call_back.connect( [&](){initialized = true;} );
-
 }
 
 
@@ -83,32 +82,46 @@ Model<dim>::Parameters::Parameters()
 template <int dim>
 void Model<dim>::Parameters::parse_parameters (ParameterHandler & prm)
 {
-  // Parse Mesh parameter.
-  std::string mesh = prm.get("Mesh");
+  (void)prm;
 
-  // Check if string `mesh` is in array `enum_names<>()`.
-  if (boost::algorithm::any_of_equal(
-          magic_enum::enum_names<BuiltinMesh>(), mesh ))
-    {
-      use_built_in_mesh = true;
-      mesh_to_use = magic_enum::enum_cast<BuiltinMesh>( mesh ).value();
-    }
-  else
-    {
-      use_built_in_mesh = false;
-      // TODO: parse `prm.get("Mesh")` result as filepath
-      // and store to `which_mesh_to_use`.
-      AssertThrow(false, ExcMessage(
-                  "This functionality is not implemented yet."));
-    }
+  // // Parse Mesh parameter.
+  // std::string mesh = prm.get("Mesh");
+  //
+  // // Check if string `mesh` is in array `enum_names<>()`.
+  // if (boost::algorithm::any_of_equal(
+  //         magic_enum::enum_names<BuiltinMesh>(), mesh ))
+  //   {
+  //     use_built_in_mesh = true;
+  //     mesh_to_use = magic_enum::enum_cast<BuiltinMesh>( mesh ).value();
+  //   }
+  // else
+  //   {
+  //     use_built_in_mesh = false;
+  //     // TODO: parse `prm.get("Mesh")` result as filepath
+  //     // and store to `which_mesh_to_use`.
+  //     AssertThrow(false, ExcMessage(
+  //                 "This functionality is not implemented yet."));
+  //   }
 
   // Parse finite element name.
   fe_name = fe_type + '(' + std::to_string(fe_order) + ')';
 
+  // // Parse results folder name.
+  // if (results_folder == "auto" && use_built_in_mesh)
+  //   {
+  //     results_folder = mesh + "_" + std::to_string(dim) + "D";
+  //   }
+  // else if (results_folder == "auto")
+  //   {
+  //     // TODO: get file name from the mesh file path.
+  //     AssertThrow(false, ExcMessage(
+  //                 "This functionality is not implemented yet."));
+  //   }
+
   // Parse results folder name.
-  if (results_folder == "auto" && use_built_in_mesh)
+  if (results_folder != "auto")
     {
-      results_folder = mesh + "_" + std::to_string(dim) + "D";
+      results_folder = results_folder + "_" + std::to_string(dim) + "D";
     }
   else if (results_folder == "auto")
     {
@@ -135,15 +148,15 @@ Model<dim>::Model (Parameters & parameters)
   // Open output file stream.
   output_file.open(results_path / "output.txt");
 
-  set_mesh();
+  // set_mesh();
   fe_ptr = FETools::get_fe_by_name<dim>( parameters.fe_name );
 
-  out << "Global mesh refinement steps: "
-      << std::to_string( parameters.global_mesh_refinement_steps ) << endl
-      << endl;
-  mesh.refine_global( parameters.global_mesh_refinement_steps );
-
-  dof_handler.distribute_dofs(*fe_ptr);
+  // out << "Global mesh refinement steps: "
+  //     << std::to_string( parameters.global_mesh_refinement_steps ) << endl
+  //     << endl;
+  // mesh.refine_global( parameters.global_mesh_refinement_steps );
+  //
+  // dof_handler.distribute_dofs(*fe_ptr);
 
   // Setup logging.
   log_file.open(results_path / "log");
@@ -162,37 +175,37 @@ Model<dim>::~Model()
 
 
 
-template <int dim>
-void Model<dim>::set_mesh ()
-{
-  if (parameters.use_built_in_mesh)
-    {
-      switch (boost::any_cast<BuiltinMesh>(parameters.mesh_to_use))
-        {
-          case shell:
-          {
-            const double inner_radius = 0.5, outer_radius = 1.0;
-
-            // Empty Point<dim>{} constructor creates a point at the origin.
-            GridGenerator::hyper_shell(mesh, Point<dim>{},
-                                       inner_radius, outer_radius,
-                                       24);  // 24, 48, 96, 192*2^m
-            break;
-          }
-          case quantum_well:
-          {
-            GridGenerator::hyper_cube(mesh, -1, 1);
-            break;
-          }
-        }
-    }
-  else
-    {
-      // TODO: load mesh form file.
-      AssertThrow(false, ExcMessage(
-                  "This functionality is not implemented yet."));
-    }
-}
+// template <int dim>
+// void Model<dim>::set_mesh ()
+// {
+//   if (parameters.use_built_in_mesh)
+//     {
+//       switch (boost::any_cast<BuiltinMesh>(parameters.mesh_to_use))
+//         {
+//           case shell:
+//           {
+//             const double inner_radius = 0.5, outer_radius = 1.0;
+//
+//             // Empty Point<dim>{} constructor creates a point at the origin.
+//             GridGenerator::hyper_shell(mesh, Point<dim>{},
+//                                        inner_radius, outer_radius,
+//                                        24);  // 24, 48, 96, 192*2^m
+//             break;
+//           }
+//           case quantum_well:
+//           {
+//             GridGenerator::hyper_cube(mesh, -1, 1);
+//             break;
+//           }
+//         }
+//     }
+//   else
+//     {
+//       // TODO: load mesh form file.
+//       AssertThrow(false, ExcMessage(
+//                   "This functionality is not implemented yet."));
+//     }
+// }
 
 
 

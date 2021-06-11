@@ -1,7 +1,7 @@
 #ifndef HARTREE_HEADER
 #define HARTREE_HEADER
 
-#include "model.hpp"
+#include "models/base_model.hpp"
 #include "dft.hpp"
 
 #include <deal.II/grid/tria.h>

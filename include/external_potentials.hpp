@@ -1,7 +1,6 @@
 #ifndef EXTERNAL_POTENTIALS_HEADER
 #define EXTERNAL_POTENTIALS_HEADER
 
-#include "model.hpp"
 #include <deal.II/base/function.h>
 
 

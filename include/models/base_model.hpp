@@ -25,13 +25,13 @@
 //   Time_Dependent ///< Time dependent Schrodinger equation.
 // };
 
-/// @brief The built-in meshes types.
-/// Can be used instead of specifying an input file with mesh to read.
-enum BuiltinMesh
-{
-  quantum_well,
-  shell,
-};
+// /// @brief The built-in meshes types.
+// /// Can be used instead of specifying an input file with mesh to read.
+// enum BuiltinMesh
+// {
+//   quantum_well,
+//   shell,
+// };
 
 /**
  * @brief The main class that represents the considering finite-element model.
@@ -50,19 +50,19 @@ public:
       return prm;
     }
 
-    /**
-     * If @p true then @link which_mesh_to_use @endlink attribute stores
-     *  value of type * @link BuiltinMesh @endlink.
-     * If @p false @link which_mesh_to_use @endlink stores path to mesh file.
-     */
-    bool use_built_in_mesh;
+    // /**
+    //  * If @p true then @link which_mesh_to_use @endlink attribute stores
+    //  *  value of type * @link BuiltinMesh @endlink.
+    //  * If @p false @link which_mesh_to_use @endlink stores path to mesh file.
+    //  */
+    // bool use_built_in_mesh;
 
-    /**
-     * Stores either mesh file path or one of built-in meshes identifiers
-     * (value of type @link BuiltinMesh @endlink). Which one is stored
-     * depends on @link use_built_in_mesh @endlink property.
-     */
-    boost::any mesh_to_use;
+    // /**
+    //  * Stores either mesh file path or one of built-in meshes identifiers
+    //  * (value of type @link BuiltinMesh @endlink). Which one is stored
+    //  * depends on @link use_built_in_mesh @endlink property.
+    //  */
+    // boost::any mesh_to_use;
 
     unsigned int global_mesh_refinement_steps = 5;
 
@@ -71,7 +71,7 @@ public:
     std::string  fe_type = "FE_Q";
     unsigned int fe_order = 1;
 
-    std::string results_folder = "auto";
+    std::string results_folder = "computational_results";
 
     unsigned int verbosity_level = 10;
 
@@ -87,7 +87,7 @@ public:
 
   Model (Parameters & parameters);
 
-  ~Model();
+  virtual ~Model();
 
   /// @brief Save the current Model state into file.
   void save_to_file (std::string file_name = "data_for_restore") const;
@@ -96,7 +96,6 @@ public:
   void load_from_file (std::string file_name = "data_for_restore");
 
   void output_mesh() const;
-  // void output_stationary_states() const;
 
   /// @brief Returns the constant reference to @p fe attribute.
   inline const dealii::FiniteElement<dim>& get_fe() const { return *fe_ptr; }
@@ -111,14 +110,13 @@ public:
   dealii::Triangulation<dim> mesh;
   dealii::DoFHandler<dim> dof_handler {mesh};
 
-private:
-  void set_mesh ();
+protected:
+  virtual void set_mesh () = 0;
 
-  std::unique_ptr <dealii::FiniteElement<dim>> fe_ptr;
+  std::unique_ptr<dealii::FiniteElement<dim>> fe_ptr;
 
   std::ofstream output_file;
   std::ofstream log_file;
-  // std::ofstream log_file {results_path / "log"};
 };
 
 
