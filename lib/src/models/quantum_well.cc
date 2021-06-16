@@ -27,7 +27,7 @@ QuantumWell<dim>::Parameters::Parameters()
       sheet_density);
   add_parameter(
        "Seed density",
-       seed_density_fun,
+       seed_density,
        "A functional description of the initial guess of density "
        "for DFT calculation.");
 
@@ -46,14 +46,6 @@ void QuantumWell<dim>::Parameters::parse_parameters (ParameterHandler & prm)
 
   width = effau->to_au(width, "Angstrom");
   sheet_density = sheet_density * effau->a0_cm * effau->a0_cm;
-
-  seed_density_constants["pi"] = numbers::PI;
-  seed_density_constants["ns"] = sheet_density;
-  seed_density_constants["width"] = width;
-
-  seed_density.initialize(FunctionParser<dim>::default_variable_names(),
-                          seed_density_fun,
-                          seed_density_constants);
 }
 
 
@@ -77,6 +69,18 @@ QuantumWell<dim>::QuantumWell (
 
   dof_handler.distribute_dofs(*fe_ptr);
 
+  // Parse seed density function.
+  {
+    std::map<std::string, double> seed_density_constants;
+
+    seed_density_constants["pi"] = numbers::PI;
+    seed_density_constants["ns"] = parameters.sheet_density;
+    seed_density_constants["width"] = parameters.width;
+
+    seed_density.initialize(FunctionParser<dim>::default_variable_names(),
+                            parameters.seed_density,
+                            seed_density_constants);
+  }
 }
 
 

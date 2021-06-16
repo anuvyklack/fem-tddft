@@ -4,12 +4,8 @@
 #include "output_results.hpp"
 // #include "output_results_2.hpp"
 #include "dft.hpp"
-// #include "kohn_sham.hpp"
-// #include "hartree.hpp"
-// #include "time_dependent.hpp"
 #include "external_potentials.hpp"
 
-#include <deal.II/base/mpi.h>
 #include <deal.II/base/parameter_acceptor.h>
 #include <deal.II/numerics/vector_tools.h>
 
@@ -27,6 +23,8 @@ int main(int argc, char** argv)
 try
   {
     const unsigned int dim {1};
+    const auto parameters_file_name = "qwell.prm";
+    const auto used_parameters_file_name = "used_parameters.prm";
 
     // Check if this app is running in parellel with "mpirun".
     // Exit with error if true.
@@ -35,20 +33,32 @@ try
 
     cout << "Executing " << dim << "D calculation." << endl;
 
-    // Declare parameters.
+    // declare parameters
           Model<dim>::Parameters model_parameters;
     QuantumWell<dim>::Parameters qwell_parameters;
-            DFT<dim>::Parameters dft_parameters;
+            DFT<dim>::Parameters   dft_parameters;
 
-    parse_parameters<dim>(argc, argv);
+    // parse parameters file
+    dealii::ParameterAcceptor::initialize(
+        parameters_file_name,
+        used_parameters_file_name,
+        dealii::ParameterHandler::Short |
+            dealii::ParameterHandler::KeepDeclarationOrder,
+        dealii::ParameterAcceptor::prm,
+        dealii::ParameterHandler::KeepDeclarationOrder
+    );
 
     QuantumWell<dim> qwell {model_parameters, qwell_parameters};
 
-    // DFT<dim> dft {qwell, dft_parameters,
-    //               nullptr, &qwell.parameters.seed_density};
+    // Move 'used_parameters' file to results folder.
+    std::filesystem::rename(
+      used_parameters_file_name,
+      qwell.results_path / used_parameters_file_name
+    );
 
-    DFT<dim> dft {qwell, dft_parameters};
+    auto* seed_density = &qwell.seed_density;
 
+    DFT<dim> dft {qwell, dft_parameters, nullptr, seed_density};
     dft.run();
 
     // PointCharge<dim> potential {1, dealii::Point<dim>()};
@@ -57,17 +67,19 @@ try
     // DFT<dim> dft {model, dft_parameters};
     // dft.run();
 
+    // Output results
+    {
+      ResultsOutput<dim> data_out {qwell};
+      data_out.add_data_vector(dft.kohn_sham_orbitals.wavefunctions, "Kohn_Sham_orbital");
+      data_out.add_data_vector(dft.get_density(), "density");
+      data_out.add_data_vector(dft.hartree_potential, "hartree_potential");
 
-    // ResultsOutput<dim> data_out {model};
-    // data_out.add_data_vector(dft.kohn_sham_orbitals.wavefunctions, "Kohn_Sham_orbital");
-    // data_out.add_data_vector(dft.density, "density");
-    // data_out.add_data_vector(dft.hartree_potential, "hartree_potential");
-    //
-    // // dealii::Vector<double> fe_potential (model.dof_handler.n_dofs());
-    // // dealii::VectorTools::interpolate( model.dof_handler, potential, fe_potential );
-    // // data_out.add_data_vector(fe_potential, "point_charge");
-    //
-    // data_out.write("dft_results");
+      // dealii::Vector<double> fe_potential (model.dof_handler.n_dofs());
+      // dealii::VectorTools::interpolate( model.dof_handler, potential, fe_potential );
+      // data_out.add_data_vector(fe_potential, "point_charge");
+
+      data_out.write("dft_results");
+    }
 
     // boost::regex_replace(str, boost::regex("[' ']{2,}"), " ");
   }

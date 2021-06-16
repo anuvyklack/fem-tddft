@@ -10,6 +10,9 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/convergence_table.h>
 
+#include <deal.II/lac/full_matrix.h>
+#include <deal.II/lac/lapack_full_matrix.h>
+
 // template <int dim>
 // struct DFT_Data
 // {
@@ -34,10 +37,10 @@ public:
     Parameters();
     Parameters (const Parameters& other) = delete;
     Parameters& operator= (const Parameters&) = delete;
-  
+
     unsigned int number_of_electrons = 2;
     unsigned int max_convergence_steps = 100;
-  
+
     bool initialized = false;
   };
 
@@ -52,17 +55,20 @@ public:
        const dealii::Function<dim> *seed_density);
 
   void run();
+  const dealii::Vector<double>& get_density() const;
 
   KohnShamOrbitals kohn_sham_orbitals;
-  dealii::Vector<double> density;
   dealii::Vector<double> hartree_potential;
 
 // private:
   void solve_Kohn_Sham_problem();
   void solve_Hartree_problem();
   void refine_mesh();
+  void calculate_density();
+  void update_mixer_matrix();
+  dealii::Vector<double> pulay_mixer(); ///< Pulay mixing
+  dealii::Vector<double> simple_mixer();
 
-  dealii::Vector<double> get_density() const;
 
   dealii::Vector<double> get_hartree_plus_xc_potential();
 
@@ -70,6 +76,12 @@ public:
   const Parameters & parameters;
   const dealii::Function<dim> * external_potential {nullptr};
   bool use_seed_density = false;
+
+  const unsigned int density_max_size = 5;
+  std::deque<dealii::Vector<double>> density;
+  std::deque<dealii::Vector<double>> density_error;
+  dealii::LAPACKFullMatrix< double > mixer_matrix;
+  // dealii::FullMatrix< double > mixer_matrix;
 
   double_ostream & out;
 

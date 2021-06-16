@@ -27,11 +27,7 @@ public:
 
     double sheet_density = 1.0e11;  ///< Sheet electron density.
 
-    std::string seed_density_fun = "2 * (ns/width) * cos(pi * x / width)^2";
-
-    dealii::FunctionParser<dim> seed_density;
-    std::map<std::string, double> seed_density_constants;
-
+    std::string seed_density = "2 * (ns/width) * cos(pi * x / width)^2";
 
     std::unique_ptr<EffectiveAU> effau;
 
@@ -42,12 +38,14 @@ public:
   };
 
   QuantumWell (typename Model<dim>::Parameters & model_parameters,
-               Parameters & parameters);
+                                    Parameters & parameters);
 
   // ~QuantumWell();
 
   const Parameters & parameters;
   EffectiveAU & effau;  ///< Effective atomic units handler.
+
+  dealii::FunctionParser<dim> seed_density;
 
   // using Model<dim>::results_path;
   using Model<dim>::out;

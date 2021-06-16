@@ -1,23 +1,32 @@
+# ${CMAKE_BINARY_DIR}
+# ${PROJECT_SOURCE_DIR}
+
 # PROJECT(schrodinger VERSION 0.0.3)
 PROJECT(fem-tddft)
 
-SET(TARGET femdft)
+SET(LIBRARY femdft)
+SET(TARGETS qwell test)
 
-# SET(DEAL_II_DIR ~/software/dealii-9.2.0/build)
+SET(DEAL_II_DIR ~/software/dealii-9.3.0/build)
 
 
 # Usually, you will not need to modify anything beyond this point...
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.12.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Global output directories for targets.
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+
 # Search for deal.II library.
 # ---------------------------
-FIND_PACKAGE(deal.II 9.2.0 QUIET
+FIND_PACKAGE(deal.II 9.3.0 QUIET
   HINTS ${deal.II_DIR} ${DEAL_II_DIR} $ENV{DEAL_II_DIR}
   )
 IF(NOT ${deal.II_FOUND})
@@ -45,16 +54,19 @@ which conflict with the requirements."
 ENDIF()
 
 
-# Search for Boost::program_options library.
+# Search for Boost.
 # ------------------------------------------
 find_package(Boost REQUIRED COMPONENTS program_options)
 set(Boost_USE_STATIC_LIBS ON)
 
 
 # Setup targets
-# -------------
+# =========================================================
+
+# Library
+# ---------------------------------------------------------
 # file(GLOB SOURCE_FILES "${PROJECT_SOURCE_DIR}/src/*.cc")
-set(SOURCE_FILES
+set(LIBRARY_SOURCE_FILES
       "models/base_model.cc"
       "models/quantum_well.cc"
       "utilities.cc"
@@ -69,38 +81,42 @@ set(SOURCE_FILES
       "external_potentials.cc"
    )
 # Add prefix to all items in list.
-list(TRANSFORM SOURCE_FILES PREPEND "src/")
+list(TRANSFORM LIBRARY_SOURCE_FILES PREPEND "lib/src/")
 
-# add_executable(${TARGET} ${SOURCE_FILES})
-add_library(${TARGET} ${SOURCE_FILES})
-target_link_libraries(${TARGET} ${Boost_LIBRARIES})
-target_include_directories(
-    ${TARGET} PUBLIC
-    "${PROJECT_SOURCE_DIR}/include"
-    "${PROJECT_SOURCE_DIR}/bundled/magic_enum"
+add_library(${LIBRARY} STATIC ${LIBRARY_SOURCE_FILES})
+DEAL_II_SETUP_TARGET(${LIBRARY})
+target_link_libraries(${LIBRARY} ${Boost_LIBRARIES})
+target_include_directories( ${LIBRARY}
+    PUBLIC
+      "${PROJECT_SOURCE_DIR}/lib/include"
+      "${PROJECT_SOURCE_DIR}/bundled/magic_enum"
   )
 
-# set_target_properties(${TARGET} PROPERTIES
+# set_target_properties(
+#     ${TARGET} PROPERTIES
 #     CXX_STANDARD 17
 #     CXX_STANDARD_REQUIRED YES
 #     CXX_EXTENSIONS NO
+#     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+#     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+#     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
 # )
 
-DEAL_II_SETUP_TARGET(${TARGET})
 
+# Executables
+# ---------------------------------------------------------
+foreach(target ${TARGETS})
+    add_executable(${target} src/${target}.cc)
+    DEAL_II_SETUP_TARGET(${target})
+    target_include_directories( ${target}
+        PUBLIC
+          "${PROJECT_SOURCE_DIR}/lib/include"
+          "${PROJECT_SOURCE_DIR}/bundled/magic_enum"
+      )
+    target_link_libraries( ${target}
+        femdft
+        ${Boost_LIBRARIES}
+      )
+endforeach()
 
-# # Test target
-# # -----------------
-# set(TEST_SOURCE_FILES "src/test.cc"
-#                       "src/general.cc"
-#                       "src/model.cc"
-#                       "src/ground_state.cc"
-#    )
-# add_executable(test ${TEST_SOURCE_FILES})
-# target_link_libraries(test ${Boost_LIBRARIES})
-# target_include_directories(test PUBLIC
-#                            "${PROJECT_SOURCE_DIR}/include")
-# DEAL_II_SETUP_TARGET(test)
-
-
-# vim: ts=2 sts=2 sw=2
+# vim: ts=4 sts=4 sw=4

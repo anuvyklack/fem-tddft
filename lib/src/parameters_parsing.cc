@@ -73,9 +73,6 @@ void parse_parameters (int &argc, char** &argv)
   po::variables_map options = parse_cmdline_options (argc, argv);
   auto prm_file_name = options["parameters"].as<std::string>();
 
-  // Model<dim>::Parameters::get_parameters();
-  // DFT_Parameters::get_parameters();
-
   // Parse parameters file
   dealii::ParameterAcceptor::initialize(
       prm_file_name,

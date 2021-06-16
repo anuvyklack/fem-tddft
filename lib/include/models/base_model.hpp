@@ -105,6 +105,7 @@ public:
 
 protected:
   virtual void set_mesh () = 0;
+  // virtual void set_mesh ();
 
   std::unique_ptr<dealii::FiniteElement<dim>> fe_ptr;
 

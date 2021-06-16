@@ -1,6 +1,7 @@
 build*
 doc
 !doc/Doxifile
+src/test.cc
 
 .vscode/
 .ccls-cache/
