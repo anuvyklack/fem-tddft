@@ -204,7 +204,7 @@ template <int dim>
 void DFT<dim>::solve_Hartree_problem()
 {
   temp = pulay_mixer();
-  // temp = simple_mixer();
+  // temp = linear_mixer();
   Hartree<dim> hartree {model, temp};
   hartree_potential = hartree.run();
 }
@@ -388,7 +388,7 @@ DFT<dim>::pulay_mixer()
 
 template <int dim>
 dealii::Vector<double>
-DFT<dim>::simple_mixer()
+DFT<dim>::linear_mixer()
 {
   if (density.size() == 1)
     return density.back();

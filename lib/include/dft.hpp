@@ -67,7 +67,7 @@ public:
   void calculate_density();
   void update_mixer_matrix();
   dealii::Vector<double> pulay_mixer(); ///< Pulay mixing
-  dealii::Vector<double> simple_mixer();
+  dealii::Vector<double> linear_mixer();
 
 
   dealii::Vector<double> get_hartree_plus_xc_potential();

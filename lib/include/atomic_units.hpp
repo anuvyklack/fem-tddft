@@ -10,7 +10,7 @@
 // Values of physical constants from NIST (https://physics.nist.gov)
 const double BOHR_in_Angstrom = 0.52917721067; ///< Bohr radius in Angstrom
 const double HARTREE_in_eV = 27.21138602; ///< eV
-const double AUOT_in_sec = 2.418884326509e-17; ///< atomic unit of time, seconds
+const double AUOT_in_sec = 2.418884326509e-17; ///< atomic unit of time in seconds
 // const double eps0 = 8.854187817e-12; // electric constant, F/m
 
 /**
@@ -49,15 +49,12 @@ struct EffectiveAU
   /// Convenient conversion from physical units to effective a.u.
   double to_au (double value, std::string units)
   {
-    if (units == "meV")
-      return value / Eh;
-    else if (units == "Angstrom")
-      return value / a0;
-    else if (units == "cm")
-      return value / a0_cm;
-    else if (units == "mV/nm")
-      return value / E_mV_nm;
-    else {
+    if      (units == "meV")      return value / Eh;
+    else if (units == "Angstrom") return value / a0;
+    else if (units == "cm")       return value / a0_cm;
+    else if (units == "mV/nm")    return value / E_mV_nm;
+    else
+    {
       std::cout << "Error. Supplied units are not implemented." << std::endl;
       throw std::invalid_argument( "Supplied units are not implemented." );
       return 0.;
@@ -68,15 +65,12 @@ struct EffectiveAU
   /// Convenient conversion from from effective a.u. to physical units.
   double from_au (double value, std::string units)
   {
-    if (units == "meV")
-      return value * Eh;
-    else if (units == "Angstrom")
-      return value * a0;
-    else if (units == "cm")
-      return value * a0_cm;
-    else if (units == "mV/nm")
-      return value * E_mV_nm;
-    else {
+    if      (units == "meV")      return value * Eh;
+    else if (units == "Angstrom") return value * a0;
+    else if (units == "cm")       return value * a0_cm;
+    else if (units == "mV/nm")    return value * E_mV_nm;
+    else
+    {
       std::cout << "Error. Supplied units are not implemented." << std::endl;
       throw std::invalid_argument( "Supplied units are not implemented." );
       return 0.;

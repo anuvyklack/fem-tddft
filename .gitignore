@@ -5,6 +5,8 @@ src/test.cc
 
 .vscode/
 .ccls-cache/
+.cache
 
-CMakeLists.txt.user
-tags
+**/CMakeLists.txt.user
+**/compile_commands.json
+**/tags
