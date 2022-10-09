@@ -25,7 +25,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 # Search for deal.II library.
-# ---------------------------
+#----------------------------
 FIND_PACKAGE(deal.II 9.3.0 QUIET
   HINTS ${deal.II_DIR} ${DEAL_II_DIR} $ENV{DEAL_II_DIR}
   )
@@ -38,7 +38,7 @@ IF(NOT ${deal.II_FOUND})
 ENDIF()
 
 # Is deal.II correctly configured?
-# --------------------------------
+#---------------------------------
 IF(NOT DEAL_II_WITH_PETSC OR NOT DEAL_II_WITH_SLEPC OR DEAL_II_PETSC_WITH_COMPLEX) # keep in one line
   MESSAGE(FATAL_ERROR "
 Error! This application requires a deal.II library that was configured with the following options:
@@ -55,16 +55,16 @@ ENDIF()
 
 
 # Search for Boost.
-# ------------------------------------------
+#-------------------------------------------
 find_package(Boost REQUIRED COMPONENTS program_options)
 set(Boost_USE_STATIC_LIBS ON)
 
 
 # Setup targets
-# =========================================================
+#==========================================================
 
 # Library
-# ---------------------------------------------------------
+#----------------------------------------------------------
 # file(GLOB SOURCE_FILES "${PROJECT_SOURCE_DIR}/src/*.cc")
 set(LIBRARY_SOURCE_FILES
       "models/base_model.cc"
@@ -80,6 +80,7 @@ set(LIBRARY_SOURCE_FILES
       # "time_dependent.cc"
       "external_potentials.cc"
    )
+
 # Add prefix to all items in list.
 list(TRANSFORM LIBRARY_SOURCE_FILES PREPEND "lib/src/")
 
@@ -104,7 +105,7 @@ target_include_directories( ${LIBRARY}
 
 
 # Executables
-# ---------------------------------------------------------
+#----------------------------------------------------------
 foreach(target ${TARGETS})
     add_executable(${target} src/${target}.cc)
     DEAL_II_SETUP_TARGET(${target})

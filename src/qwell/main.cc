@@ -2,10 +2,14 @@
 #include "utilities.hpp"
 #include "parameters_parsing.hpp"
 #include "output_results.hpp"
+#include "utilities.hpp"
+#include "parameters_parsing.hpp"
+#include "output_results.hpp"
 // #include "output_results_2.hpp"
 #include "dft.hpp"
 #include "external_potentials.hpp"
 
+#include <algorithm>
 #include <deal.II/base/parameter_acceptor.h>
 #include <deal.II/numerics/vector_tools.h>
 
@@ -15,7 +19,7 @@
 #include <filesystem>
 
 // using namespace dealii;
-using std::cin, std::cout, std::endl;
+using std::cout, std::endl;
 
 // int main(int argc, char *argv[])
 int main(int argc, char** argv)
@@ -50,7 +54,7 @@ try
 
     QuantumWell<dim> qwell {model_parameters, qwell_parameters};
 
-    // Move 'used_parameters' file to results folder.
+    // Move "used_parameters" file to results folder.
     std::filesystem::rename(
       used_parameters_file_name,
       qwell.results_path / used_parameters_file_name
@@ -59,13 +63,22 @@ try
     auto* seed_density = &qwell.seed_density;
 
     DFT<dim> dft {qwell, dft_parameters, nullptr, seed_density};
-    dft.run();
+
+    // qwell.out << "Lowest subband spasing" << endl;
+    // for (unsigned int i = 0; i < dft.kohn_sham_orbitals.eigenvalues.size() - 1; ++i)
+    //   {
+    //     qwell.out << "    " << dft.kohn_sham_orbitals.eigenvalues[i + 1] -
+    //                            dft.kohn_sham_orbitals.eigenvalues[i]
+    //               << endl;
+    //   }
 
     // PointCharge<dim> potential {1, dealii::Point<dim>()};
 
     // DFT<dim> dft {model, dft_parameters, potential};
     // DFT<dim> dft {model, dft_parameters};
-    // dft.run();
+    dft.run();
+
+    cout << "Density norm: " << dft.get_density().l2_norm() << endl;
 
     // Output results
     {

@@ -14,12 +14,12 @@ const double AUOT_in_sec = 2.418884326509e-17; ///< atomic unit of time in secon
 // const double eps0 = 8.854187817e-12; // electric constant, F/m
 
 /**
- * @brief Effective atomic units 
+ * @brief Effective atomic units
  */
 struct EffectiveAU
 {
-  EffectiveAU (double eps, double meff) 
-    : eps(eps), m_eff(meff) 
+  EffectiveAU (double eps, double meff)
+    : eps(eps), m_eff(meff)
   {}
 
   const double eps;   ///< Dielectric constant,

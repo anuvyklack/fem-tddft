@@ -1,0 +1,50 @@
+# Listing of Parameters
+# ---------------------
+subsection General
+  # The folder to store results to. If set to 'auto' the results folder name
+  # will be created atomaticaly from mesh name.
+  set Results folder               = qwell
+
+  # The finite element space to use. This option accepts any standard finite
+  # element name defined in the DEAL II library.
+  set Finite element space         = FE_Q
+
+  # Polynomial degree.
+  set Finite element order         = 2
+
+  # The number of times the 1-cell coarse mesh should berefined globally for
+  # our computations.
+  set Global mesh refinement steps = 8
+
+  # Set the verbosity level in the log file.
+  set Verbosity level              = 10
+end
+
+
+subsection Quantum Well
+  # The width of the quantum well in angstroms.
+  set Quantum well width      = 400
+  set Dielectric constant     = 13
+
+  # Effective mass in units m0.
+  set Effective mass          = 0.067
+  set Sheet electron density. = 1e+11
+
+  # A functional description of the initial guess of density for DFT
+  # calculation.
+  set Seed density            = 2 * (ns/width) * cos(pi * x / width)^2
+  # set Seed density            = 0
+end
+
+
+subsection DFT
+  # How many electrons (i.e. the number of eigenvalues/eigenfunctions) to be
+  # computed.
+  set Number of electrons           = 10
+
+  # The maximum number of iterations the solver is allowed to do trying to
+  # achieve the solution convergence.
+  set Maximum DFT convergence steps = 100
+end
+
+
